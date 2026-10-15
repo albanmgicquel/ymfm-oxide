@@ -1,0 +1,38 @@
+chip ymf262
+clock 14318180
+samples 20000
+# The OPL3's timers, status register and IRQ line, as on the OPL2 but with
+# a 288-clock sample and no CSM: 0x08 bit 7 does nothing here.
+0 w 2 05 3 01  # NEW
+# A held voice on channel 0, on outputs A and B, and one on channel 9.
+0 w 0 20 1 01 0 23 1 21 0 40 1 3f 0 43 1 00 0 63 1 f0 0 83 1 0f 0 c0 1 30 0 a0 1 41 0 b0 1 32
+0 w 2 20 3 02 2 23 3 01 2 40 3 1f 2 43 3 04 2 63 3 c4 2 83 3 2a 2 c0 3 d2 2 a0 3 81 2 b0 3 2d
+0 w 0 02 1 e0  # timer A: 128 samples
+0 w 0 03 1 f0  # timer B: 256 samples
+0 r 0
+0 w 0 04 1 03
+120 r 0
+130 r 0
+200 w 0 04 1 80
+201 r 0
+260 r 0
+300 w 0 04 1 43
+301 r 0
+1000 r 0
+1100 w 0 04 1 23
+1101 r 0
+2000 r 0
+3000 w 0 08 1 80  # no CSM on the OPL3
+3000 w 0 04 1 03
+5000 r 0
+6000 w 0 04 1 00 0 04 1 80
+6001 r 0
+# Timer B loaded alone, then reloaded with a new value.
+7000 w 0 03 1 00 0 04 1 02
+11000 r 0
+11100 w 0 03 1 fe
+13000 w 0 04 1 82
+13001 r 0
+13500 r 0
+16000 w 0 04 1 00
+16001 r 0

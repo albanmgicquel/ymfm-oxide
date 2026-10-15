@@ -1,0 +1,79 @@
+chip ym3526
+clock 3579545
+samples 14000
+# The OPL2 waveform log on the YM3526, which has no waveform select: every
+# operator plays the sine whatever 0x01 and 0xE0 say.
+# Every OPL2 waveform on both operators of channel 0, then the same
+# waveform registers with waveform select disabled in 0x01, which forces
+# the sine. Each segment keys a fresh note.
+0 w 0 01 1 20  # waveform select on
+0 w 0 20 1 01
+0 w 0 40 1 10
+0 w 0 60 1 f0
+0 w 0 80 1 0f
+0 w 0 e0 1 00
+0 w 0 23 1 01
+0 w 0 43 1 00
+0 w 0 63 1 f0
+0 w 0 83 1 0f
+0 w 0 e3 1 00
+0 w 0 c0 1 02
+0 w 0 a0 1 44
+0 w 0 b0 1 32
+2600 w 0 b0 1 12
+3000 w 0 20 1 01
+3000 w 0 40 1 10
+3000 w 0 60 1 f0
+3000 w 0 80 1 0f
+3000 w 0 e0 1 01
+3000 w 0 23 1 01
+3000 w 0 43 1 00
+3000 w 0 63 1 f0
+3000 w 0 83 1 0f
+3000 w 0 e3 1 01
+3000 w 0 c0 1 02
+3000 w 0 a0 1 44
+3000 w 0 b0 1 32
+5600 w 0 b0 1 12
+6000 w 0 20 1 01
+6000 w 0 40 1 10
+6000 w 0 60 1 f0
+6000 w 0 80 1 0f
+6000 w 0 e0 1 02
+6000 w 0 23 1 01
+6000 w 0 43 1 00
+6000 w 0 63 1 f0
+6000 w 0 83 1 0f
+6000 w 0 e3 1 02
+6000 w 0 c0 1 02
+6000 w 0 a0 1 44
+6000 w 0 b0 1 32
+8600 w 0 b0 1 12
+9000 w 0 20 1 01
+9000 w 0 40 1 10
+9000 w 0 60 1 f0
+9000 w 0 80 1 0f
+9000 w 0 e0 1 03
+9000 w 0 23 1 01
+9000 w 0 43 1 00
+9000 w 0 63 1 f0
+9000 w 0 83 1 0f
+9000 w 0 e3 1 03
+9000 w 0 c0 1 02
+9000 w 0 a0 1 44
+9000 w 0 b0 1 32
+11600 w 0 b0 1 12
+12000 w 0 01 1 00  # waveform select off: every operator plays the sine
+12000 w 0 20 1 01
+12000 w 0 40 1 10
+12000 w 0 60 1 f0
+12000 w 0 80 1 0f
+12000 w 0 e0 1 03
+12000 w 0 23 1 01
+12000 w 0 43 1 00
+12000 w 0 63 1 f0
+12000 w 0 83 1 0f
+12000 w 0 e3 1 02
+12000 w 0 c0 1 02
+12000 w 0 a0 1 44
+12000 w 0 b0 1 32

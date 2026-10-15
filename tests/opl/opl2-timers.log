@@ -1,0 +1,50 @@
+chip ym3812
+clock 3579545
+samples 24000
+# The OPL2's timers, status register, IRQ line and CSM. Timer A counts 4 x
+# 0x02 against 1024 and timer B 0x03 against 256 in steps of 16, each step
+# one sample (72 clocks). 0x04 loads them (bits 0 and 1), masks them out of
+# the status and the IRQ (bits 6 and 5, which also clear the flag), and
+# with bit 7 resets the IRQ, ignoring the other bits. Status reads land
+# before and after the expiries. Then CSM (0x08 bit 7): every timer A
+# expiry keys every channel on.
+# A held voice on channel 0.
+0 w 0 20 1 01 0 23 1 21 0 40 1 3f 0 43 1 00 0 63 1 f0 0 83 1 0f 0 a0 1 41 0 b0 1 32
+0 w 0 02 1 f0  # timer A: 64 samples
+0 w 0 03 1 c0  # timer B: 1024 samples
+0 r 0
+0 w 0 04 1 03  # load both, unmasked
+50 r 0
+70 r 0  # timer A has fired, and the IRQ with it
+100 w 0 04 1 80  # IRQ reset clears the flags
+101 r 0
+140 r 0
+1100 r 0  # timer B has fired too
+1200 w 0 04 1 43  # mask timer A, keep both loaded
+1201 r 0
+1300 r 0
+2500 r 0
+2600 w 0 04 1 23  # mask timer B instead
+2601 r 0
+3800 r 0
+4000 w 0 04 1 00  # stop both
+4001 w 0 04 1 80
+4002 r 0
+5000 r 0
+# A new timer A value while it runs takes effect at the next expiry.
+6000 w 0 02 1 80 0 04 1 01
+6100 w 0 02 1 ff
+6300 r 0
+6301 w 0 04 1 81
+6302 r 0
+6400 r 0
+9000 w 0 04 1 00 0 04 1 80
+# CSM: the voice keyed off, then keyed on by every timer A expiry.
+10000 w 0 b0 1 12
+11000 w 0 08 1 80 0 02 1 00 0 04 1 01  # timer A: 1024 samples
+15000 w 0 83 1 05
+18000 w 0 08 1 00
+20000 w 0 04 1 80
+20001 r 0
+20002 w 0 04 1 00
+20003 r 0
