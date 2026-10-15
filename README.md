@@ -31,7 +31,7 @@ register, timers, IRQs and busy time.
 
 ```toml
 [dependencies]
-tecs-opl = { git = "https://github.com/<owner>/tecs-opl" }
+tecs-opl = { git = "https://github.com/albanmgicquel/tecs-opl" }
 ```
 
 ```rust
