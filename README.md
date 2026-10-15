@@ -1,4 +1,4 @@
-# tecs-opl
+# ymfm-oxide
 
 A Yamaha OPL2 (YM3812) and OPL3 (YMF262) FM synthesizer in pure Rust: no
 dependencies, `#![no_std]`, no allocation. You write registers the way a DOS
@@ -31,11 +31,11 @@ register, timers, IRQs and busy time.
 
 ```toml
 [dependencies]
-tecs-opl = { git = "https://github.com/albanmgicquel/tecs-opl" }
+ymfm-oxide = { git = "https://github.com/albanmgicquel/ymfm-oxide" }
 ```
 
 ```rust
-use tecs_opl::{Chip, Kind, RATE};
+use ymfm_oxide::{Chip, Kind, RATE};
 
 let mut chip = Chip::new(Kind::Opl3);
 // A held sine on channel 0, about 440 Hz, keyed on.
@@ -85,10 +85,10 @@ With the oracle built, a randomized comparison runs as well: it writes random
 register logs, renders each through both, and compares them.
 
 ```sh
-TECS_OPL_ORACLE=$PWD/tests/opl/oracle TECS_OPL_CASES=200 cargo test
+YMFM_ORACLE=$PWD/tests/opl/oracle YMFM_CASES=200 cargo test
 ```
 
-Without `TECS_OPL_ORACLE` that test returns at once. Failing logs are kept in
+Without `YMFM_ORACLE` that test returns at once. Failing logs are kept in
 a temporary directory, so a seed can be replayed.
 
 ## Licence

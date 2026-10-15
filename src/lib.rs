@@ -24,7 +24,7 @@
 //! rendering one are all safe on an audio callback.
 //!
 //! ```
-//! use tecs_opl::{Chip, Kind};
+//! use ymfm_oxide::{Chip, Kind};
 //!
 //! let mut chip = Chip::new(Kind::Opl2);
 //! // A held sine on channel 0: modulator silent, carrier at full level,

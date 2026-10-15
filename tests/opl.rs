@@ -14,14 +14,14 @@
 //! to it, and the register file at that point, which is usually enough to see
 //! which part of the chip it is in.
 //!
-//! `TECS_OPL_ORACLE`, naming a built oracle, adds a randomized comparison over
+//! `YMFM_ORACLE`, naming a built oracle, adds a randomized comparison over
 //! logs this test writes itself. It is a development aid rather than a gate:
 //! the oracle is never built by Cargo, so the test returns at once without it.
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use tecs_opl::{Chip, Kind};
+use ymfm_oxide::{Chip, Kind};
 
 /// One register log: the chip, the samples to render and the writes.
 struct Log {
@@ -320,14 +320,14 @@ fn random_log(seed: u64, kind: Kind, samples: usize) -> String {
 
 #[test]
 fn matches_ymfm_on_random_logs_when_an_oracle_is_named() {
-    let Some(oracle) = std::env::var_os("TECS_OPL_ORACLE") else {
+    let Some(oracle) = std::env::var_os("YMFM_ORACLE") else {
         return;
     };
-    let count: u64 = std::env::var("TECS_OPL_CASES")
+    let count: u64 = std::env::var("YMFM_CASES")
         .ok()
         .and_then(|value| value.parse().ok())
         .unwrap_or(200);
-    let scratch = std::env::temp_dir().join(format!("tecs-opl-{}", std::process::id()));
+    let scratch = std::env::temp_dir().join(format!("ymfm-oxide-{}", std::process::id()));
     std::fs::create_dir_all(&scratch).expect("a scratch directory");
     let mut failures = Vec::new();
     for seed in 1..=count {
