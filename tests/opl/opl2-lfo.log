@@ -1,0 +1,59 @@
+# opl2 28000
+# Tremolo and vibrato on the OPL2, through one full AM cycle (13440
+# samples) at each depth. Channel 0 has AM on its carrier, channel 1 VIB,
+# channel 2 both, channel 3 VIB on the modulator only. 0xBD sets depth 0,
+# then both depths at 14000.
+0 0bd 00
+0 020 01
+0 040 20
+0 060 f0
+0 080 0f
+0 0e0 00
+0 023 a1
+0 043 04
+0 063 f0
+0 083 0f
+0 0e3 00
+0 0c0 00
+0 0a0 a0
+0 0b0 32
+0 021 01
+0 041 20
+0 061 f0
+0 081 0f
+0 0e1 00
+0 024 61
+0 044 04
+0 064 f0
+0 084 0f
+0 0e4 00
+0 0c1 00
+0 0a1 c0
+0 0b1 36
+0 022 01
+0 042 20
+0 062 f0
+0 082 0f
+0 0e2 00
+0 025 e1
+0 045 04
+0 065 f0
+0 085 0f
+0 0e5 00
+0 0c2 00
+0 0a2 e0
+0 0b2 32
+0 028 41
+0 048 0c
+0 068 f0
+0 088 0f
+0 0e8 00
+0 02b 21
+0 04b 04
+0 06b f0
+0 08b 0f
+0 0eb 00
+0 0c3 00
+0 0a3 00
+0 0b3 37
+14000 0bd c0  # AM depth 4.8 dB, PM depth 14 cents

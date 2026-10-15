@@ -1,0 +1,13 @@
+[package]
+name = "tecs-opl"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+description = "A pure-Rust, no_std Yamaha OPL2 (YM3812) and OPL3 (YMF262) FM synthesizer, translated from ymfm"
+license = "BSD-3-Clause"
+authors = ["Alban Gicquel <agicquel@amazon.com>"]
+keywords = ["opl", "opl3", "fm", "synthesizer", "adlib"]
+categories = ["emulators", "multimedia::audio", "no-std"]
+readme = "README.md"
+
+[dependencies]
