@@ -1,0 +1,69 @@
+chip ym2414
+clock 3579545
+samples 90000
+# The two LFOs. LFO 1: rate 0x18, AM depth 0x19 (bit 7 clear), PM depth 0x19
+# (bit 7 set), waveform 0x1B bits 0-1, sensitivities 0x38 (bit 7 clear). LFO 2:
+# rate 0x16, AM depth 0x17, PM depth 0x17 with bit 7, waveform 0x1B bits 2-3,
+# sensitivities 0x38 with bit 7. Each waveform of each LFO alone at full
+# depths with PMS 7 and AMS 3, PMS and AMS swept on each, both together
+# (added), rates slow to fast, and the sync bits (0x1B bits 4 and 5), which
+# reset an LFO's counter at each key-on.
+0 w 0 08 1 00 0 40 1 01 0 60 1 7f 0 80 1 1f 0 a0 1 00 0 c0 1 00 0 e0 1 0f 0 48 1 01 0 68 1 7f 0 88 1 1f 0 a8 1 00 0 c8 1 00 0 e8 1 0f 0 50 1 01 0 70 1 7f 0 90 1 1f 0 b0 1 00 0 d0 1 00 0 f0 1 0f 0 58 1 01 0 78 1 00 0 98 1 1f 0 b8 1 80 0 d8 1 00 0 f8 1 0f 0 20 1 87 0 28 1 4a 0 30 1 01 0 38 1 73 0 18 1 c8 0 19 1 7f 0 19 1 ff  # LFO 1 full depth
+0 w 0 20 1 c7
+0 w 0 1b 1 00  # LFO 1 waveform 0
+5000 w 0 1b 1 01  # LFO 1 waveform 1
+10000 w 0 1b 1 02  # LFO 1 waveform 2
+15000 w 0 1b 1 03  # LFO 1 waveform 3
+20000 w 0 1b 1 02 0 38 1 00  # PMS 0, AMS 0
+21000 w 0 1b 1 02 0 38 1 11  # PMS 1, AMS 1
+22000 w 0 1b 1 02 0 38 1 22  # PMS 2, AMS 2
+23000 w 0 1b 1 02 0 38 1 33  # PMS 3, AMS 3
+24000 w 0 1b 1 02 0 38 1 40  # PMS 4, AMS 0
+25000 w 0 1b 1 02 0 38 1 51  # PMS 5, AMS 1
+26000 w 0 1b 1 02 0 38 1 62  # PMS 6, AMS 2
+27000 w 0 1b 1 02 0 38 1 73  # PMS 7, AMS 3
+28000 w 0 38 1 00 0 19 1 00 0 19 1 80 0 16 1 c4 0 17 1 7f 0 17 1 ff 0 38 1 f3  # LFO 1 off, LFO 2 full depth
+28000 w 0 1b 1 00  # LFO 2 waveform 0
+33000 w 0 1b 1 04  # LFO 2 waveform 1
+38000 w 0 1b 1 08  # LFO 2 waveform 2
+43000 w 0 1b 1 0c  # LFO 2 waveform 3
+48000 w 0 1b 1 08 0 38 1 80  # PMS 2 0, AMS 2 0
+49000 w 0 1b 1 08 0 38 1 91  # PMS 2 1, AMS 2 1
+50000 w 0 1b 1 08 0 38 1 a2  # PMS 2 2, AMS 2 2
+51000 w 0 1b 1 08 0 38 1 b3  # PMS 2 3, AMS 2 3
+52000 w 0 1b 1 08 0 38 1 c0  # PMS 2 4, AMS 2 0
+53000 w 0 1b 1 08 0 38 1 d1  # PMS 2 5, AMS 2 1
+54000 w 0 1b 1 08 0 38 1 e2  # PMS 2 6, AMS 2 2
+55000 w 0 1b 1 08 0 38 1 f3  # PMS 2 7, AMS 2 3
+56000 w 0 18 1 b0 0 19 1 60 0 19 1 d0 0 38 1 52 0 38 1 e3 0 16 1 d3 0 17 1 50 0 17 1 c0 0 1b 1 06  # both together
+60000 w 0 18 1 00 0 16 1 5a  # rates 00/5a
+61000 w 0 18 1 0f 0 16 1 55  # rates 0f/55
+62000 w 0 18 1 30 0 16 1 6a  # rates 30/6a
+63000 w 0 18 1 7a 0 16 1 20  # rates 7a/20
+64000 w 0 18 1 a5 0 16 1 ff  # rates a5/ff
+65000 w 0 18 1 e0 0 16 1 ba  # rates e0/ba
+66000 w 0 18 1 ff 0 16 1 a5  # rates ff/a5
+67000 w 0 18 1 90 0 16 1 90 0 1b 1 32  # both synced
+67500 w 0 20 1 87
+67700 w 0 20 1 c7
+69000 w 0 20 1 87
+69200 w 0 20 1 c7
+70500 w 0 20 1 87
+70700 w 0 20 1 c7
+72000 w 0 20 1 87
+72200 w 0 20 1 c7
+73500 w 0 20 1 87
+73700 w 0 20 1 c7
+75000 w 0 20 1 87
+75200 w 0 20 1 c7
+76500 w 0 20 1 87
+76700 w 0 20 1 c7
+78000 w 0 20 1 87
+78200 w 0 20 1 c7
+80000 w 0 1b 1 12  # only LFO 1 synced
+81000 w 0 20 1 87
+81100 w 0 20 1 c7
+83000 w 0 1b 1 22  # only LFO 2 synced
+84000 w 0 20 1 87
+84100 w 0 20 1 c7
+86000 w 0 28 1 00 0 30 1 01 0 38 1 70 0 38 1 f0  # lowest key code under PM

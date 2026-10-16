@@ -1,0 +1,18 @@
+chip ym2414
+clock 3579545
+samples 30000
+# The noise generator (0x0F bit 7, frequency bits 0-4, not inverted as the
+# OPM's are) on channel 7's operator 4, at frequencies 0, 1, 8, 16, 31, with
+# envelopes and AM, and the noise LFO waveform on both LFOs.
+0 w 0 08 1 07 0 47 1 01 0 67 1 7f 0 87 1 1f 0 a7 1 00 0 c7 1 00 0 e7 1 0f 0 4f 1 01 0 6f 1 7f 0 8f 1 1f 0 af 1 00 0 cf 1 00 0 ef 1 0f 0 57 1 01 0 77 1 7f 0 97 1 1f 0 b7 1 00 0 d7 1 00 0 f7 1 0f 0 5f 1 01 0 7f 1 00 0 9f 1 1f 0 bf 1 82 0 df 1 00 0 ff 1 4f 0 27 1 87 0 2f 1 4a 0 37 1 01 0 3f 1 02
+0 w 0 27 1 c7
+0 w 0 0f 1 80  # noise frequency 0
+3000 w 0 0f 1 81  # noise frequency 1
+6000 w 0 0f 1 88  # noise frequency 8
+9000 w 0 0f 1 90  # noise frequency 16
+12000 w 0 0f 1 9f  # noise frequency 31
+15000 w 0 0f 1 00  # noise off: the sine returns
+17000 w 0 0f 1 84 0 18 1 e0 0 19 1 7f 0 1b 1 03  # noise LFO 1 on the AM
+21000 w 0 19 1 00 0 16 1 e8 0 17 1 7f 0 1b 1 0c 0 3f 1 82  # noise LFO 2 on the AM
+25000 w 0 17 1 ff 0 3f 1 f2 0 0f 1 00  # noise LFO 2 on the PM
+29000 w 0 27 1 87

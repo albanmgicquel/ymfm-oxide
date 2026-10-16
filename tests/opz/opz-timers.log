@@ -1,0 +1,58 @@
+chip ym2414
+clock 3579545
+samples 30000
+# The timers, status and IRQ line. Timer A counts 0x10 (high 8 bits) and 0x11
+# (low 2) against 1024, timer B 0x12 against 256 in steps of 16. 0x14 loads
+# them (bits 0 and 1), enables their flags (bits 2 and 3) and resets them
+# (bits 4 and 5). Status reads land around each expiry and straight after a
+# write, which shows the busy bit; offset 0 reads 0xFF. Then CSM (bit 7):
+# every timer A expiry keys every channel on.
+0 w 0 08 1 00 0 40 1 01 0 60 1 7f 0 80 1 1f 0 a0 1 00 0 c0 1 00 0 e0 1 0f 0 48 1 01 0 68 1 7f 0 88 1 1f 0 a8 1 00 0 c8 1 00 0 e8 1 0f 0 50 1 01 0 70 1 7f 0 90 1 1f 0 b0 1 00 0 d0 1 00 0 f0 1 0f 0 58 1 01 0 78 1 00 0 98 1 1f 0 b8 1 08 0 d8 1 00 0 f8 1 8a 0 20 1 87 0 28 1 3a 0 30 1 01 0 38 1 00
+0 w 0 10 1 fc 0 11 1 02 0 12 1 f0  # A: 14 samples, B: 256
+0 r 1
+1 r 0
+1 r 1
+10 w 0 14 1 05  # load and enable A
+10 r 1  # busy
+11 r 1
+23 r 1
+24 r 1
+25 r 1
+100 w 0 14 1 15  # reset the flag, keep running
+101 r 1
+130 r 1
+200 w 0 14 1 0f  # both
+201 r 1
+470 r 1
+480 r 1
+500 w 0 14 1 3f  # reset both flags
+501 r 1
+600 w 0 14 1 03  # loaded, not enabled
+1000 r 1
+1200 w 0 14 1 0e  # A stops, B enabled
+1600 r 1
+2000 w 0 14 1 30
+2001 r 1
+3000 w 0 12 1 fe 0 14 1 0a
+3010 w 0 12 1 80  # B reloads with a new value at its next expiry
+3040 r 1
+3050 w 0 14 1 2a
+3051 r 1
+5200 r 1
+6000 w 0 14 1 30
+7000 w 0 10 1 00 0 11 1 00 0 14 1 05  # longest A
+8030 r 1
+9000 w 0 14 1 30
+9001 w 0 10 1 ff 0 11 1 03 0 14 1 05  # A of one sample
+9003 r 1
+9010 w 0 14 1 30
+9011 r 1
+10000 w 0 08 1 01 0 41 1 01 0 61 1 7f 0 81 1 1f 0 a1 1 00 0 c1 1 00 0 e1 1 0f 0 49 1 01 0 69 1 7f 0 89 1 1f 0 a9 1 00 0 c9 1 00 0 e9 1 0f 0 51 1 01 0 71 1 7f 0 91 1 1f 0 b1 1 00 0 d1 1 00 0 f1 1 0f 0 59 1 01 0 79 1 00 0 99 1 1f 0 b9 1 06 0 d9 1 00 0 f9 1 68 0 21 1 87 0 29 1 36 0 31 1 01 0 39 1 00
+10000 w 0 08 1 02 0 42 1 01 0 62 1 7f 0 82 1 1f 0 a2 1 00 0 c2 1 00 0 e2 1 0f 0 4a 1 01 0 6a 1 7f 0 8a 1 1f 0 aa 1 00 0 ca 1 00 0 ea 1 0f 0 52 1 01 0 72 1 7f 0 92 1 1f 0 b2 1 00 0 d2 1 00 0 f2 1 0f 0 5a 1 01 0 7a 1 00 0 9a 1 1f 0 ba 1 06 0 da 1 00 0 fa 1 68 0 22 1 87 0 2a 1 3c 0 32 1 01 0 3a 1 00
+10000 w 0 08 1 03 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 1f 0 bb 1 06 0 db 1 00 0 fb 1 68 0 23 1 87 0 2b 1 42 0 33 1 01 0 3b 1 00
+11000 w 0 10 1 00 0 11 1 00 0 14 1 85  # CSM on, A 1024
+11500 r 1
+16000 w 0 10 1 82 0 11 1 01 0 14 1 95  # faster, flag reset
+22000 w 0 14 1 05  # CSM off
+24000 w 0 14 1 30
+24001 r 1
