@@ -1,0 +1,41 @@
+chip ym2612
+clock 7670453
+samples 40000
+# Channel 3's special mode (0x27 bits 6-7 = 01): each operator at its own
+# frequency, operator 1 from A9/AD, operator 2 from AA/AE, operator 3 from
+# A8/AC and operator 4 from the channel's own A2/A6; the upper halves only
+# latch, and the lower half applies the latch. There are two latches, one
+# for A4-A7 and one for AC-AF, shared by all channels and both banks: a
+# latch written for one channel lands on the next lower-half write to any.
+# Writes to A3/A7/AB/AF are dropped. Then mode 11 (still special), then
+# mode 00, then CSM (mode 10): timer A's overflow keys all four operators of
+# channel 3 on and the next sample off.
+0 w 0 32 1 01 0 42 1 06 0 52 1 1f 0 62 1 00 0 72 1 00 0 82 1 0f 0 92 1 00 0 3a 1 01 0 4a 1 06 0 5a 1 1f 0 6a 1 00 0 7a 1 00 0 8a 1 0f 0 9a 1 00 0 36 1 01 0 46 1 06 0 56 1 1f 0 66 1 00 0 76 1 00 0 86 1 0f 0 96 1 00 0 3e 1 01 0 4e 1 06 0 5e 1 1f 0 6e 1 00 0 7e 1 00 0 8e 1 0f 0 9e 1 00 0 b2 1 07 0 b6 1 c0 0 a6 1 22 0 a2 1 00 0 28 1 f2  # channel 3: algorithm 7, all four heard
+2000 w 0 27 1 40  # special mode
+4000 w 0 ad 1 22 0 a9 1 80  # operator 1: block 4, fnum 0x280
+6000 w 0 ae 1 1b 0 aa 1 40  # operator 2: block 3, fnum 0x340
+8000 w 0 ac 1 2c 0 a8 1 10  # operator 3: block 5, fnum 0x410
+10000 w 0 a6 1 26 0 a2 1 90  # operator 4: the channel's own frequency
+12000 w 0 ab 1 55 0 af 1 3f 0 a3 1 12 0 a7 1 34  # dropped
+13000 w 0 ad 1 1a  # latch only: nothing changes yet
+14000 w 0 aa 1 90  # operator 2's low half applies the latch meant for operator 1
+15000 w 2 a4 3 2b  # bank 1 channel 4's latch ...
+16000 w 0 a2 1 55  # ... lands on channel 3
+18000 w 0 27 1 c0  # mode 11: special as well
+20000 w 0 27 1 00  # mode 00: one frequency again
+22000 w 0 28 1 02 0 24 1 f0 0 25 1 00  # timer A: 1024 - 0x3c0 = 64 samples
+22100 w 0 82 1 0f 0 8a 1 0f 0 86 1 0f 0 8e 1 0f 0 62 1 10 0 6a 1 10 0 66 1 10 0 6e 1 10
+23000 w 0 27 1 85  # CSM, timer A loaded and flagging
+23000 r 0
+23062 r 0
+23124 r 0
+23186 r 0
+23248 r 0
+23310 r 0
+26000 w 0 27 1 95  # flag reset, still CSM
+28000 w 0 24 1 ff 0 25 1 03 0 27 1 15  # the shortest period, without CSM
+29000 w 0 27 1 81  # CSM with the flag disabled: key-ons, no status
+29010 r 0
+30000 w 0 24 1 e0 0 27 1 c5  # mode 11 is not CSM
+32000 w 0 27 1 85 0 ad 1 24 0 a9 1 10 0 ae 1 19 0 a9 1 10 0 ac 1 23 0 a8 1 77  # CSM keeps the special frequencies
+36000 w 0 27 1 30  # everything stopped
