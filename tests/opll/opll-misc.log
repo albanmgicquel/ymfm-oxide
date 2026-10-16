@@ -1,0 +1,73 @@
+chip ym2413
+clock 3579545
+samples 6130
+# The rest of the register interface: reads (which give 0), writes above
+# 0x3f (ignored), the mode register 0x3f, the test register, channel
+# registers 0x19-0x1f and 0x29-0x2f that name no channel, an instrument
+# and volume change on a sounding note, every F-number bit in one block,
+# and invalid instruments in rhythm channels.
+0 w 0 30 1 70
+0 w 0 10 1 81
+0 w 0 20 1 19
+0 r 0
+0 r 1
+500 w 0 45 1 ff
+500 w 0 7e 1 3f
+500 w 0 ff 1 12
+800 w 0 3f 1 5a
+800 w 0 0f 1 00
+1100 w 0 29 1 1f
+1100 w 0 1c 1 ff
+1100 w 0 2f 1 10
+1400 w 0 30 1 70
+1460 w 0 30 1 71
+1520 w 0 30 1 72
+1580 w 0 30 1 73
+1640 w 0 30 1 74
+1700 w 0 30 1 75
+1760 w 0 30 1 76
+1820 w 0 30 1 77
+1880 w 0 30 1 78
+1940 w 0 30 1 79
+2000 w 0 30 1 7a
+2060 w 0 30 1 7b
+2120 w 0 30 1 7c
+2180 w 0 30 1 7d
+2240 w 0 30 1 7e
+2300 w 0 30 1 7f
+2360 w 0 30 1 00
+2480 w 0 30 1 10
+2600 w 0 30 1 20
+2720 w 0 30 1 30
+2840 w 0 30 1 40
+2960 w 0 30 1 50
+3080 w 0 30 1 60
+3200 w 0 30 1 70
+3320 w 0 30 1 80
+3440 w 0 30 1 90
+3560 w 0 30 1 a0
+3680 w 0 30 1 b0
+3800 w 0 30 1 c0
+3920 w 0 30 1 d0
+4040 w 0 30 1 e0
+4160 w 0 30 1 f0
+4280 w 0 10 1 01
+4280 w 0 20 1 18
+4430 w 0 10 1 02
+4430 w 0 20 1 18
+4580 w 0 10 1 04
+4580 w 0 20 1 18
+4730 w 0 10 1 08
+4730 w 0 20 1 18
+4880 w 0 10 1 10
+4880 w 0 20 1 18
+5030 w 0 10 1 20
+5030 w 0 20 1 18
+5180 w 0 10 1 40
+5180 w 0 20 1 18
+5330 w 0 10 1 80
+5330 w 0 20 1 18
+5480 w 0 10 1 00
+5480 w 0 20 1 19
+5630 w 0 20 1 09
+5630 r 0
