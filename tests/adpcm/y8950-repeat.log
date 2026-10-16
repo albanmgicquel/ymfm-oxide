@@ -1,0 +1,53 @@
+chip y8950
+clock 3579545
+samples 30000
+mem adpcm-b y8950.bin
+# Repeat, ROM and 8-bit DRAM (32-byte units), a change of the memory type
+# mid-sample (which moves the end), the reset bit, and a sample one unit
+# long.
+# The image y8950.bin (written by tests/adpcm.rs): 1 KB segments at 0x000
+# (a sine), 0x400 (a ramp), 0x800 (noise) and 0xc00 (a square loud enough
+# to clamp), then a 4 KB chirp at 0x1000. In RAM with 1-bit access (0x08
+# bits 0-1 clear) an address unit is 4 bytes, in ROM or 8-bit RAM 32 bytes.
+# Register 0x07 is ADPCM-B's control (0x80 start, 0x40 record, 0x20
+# external memory, 0x10 repeat, 0x08 speaker off, 0x01 reset), 0x09-0x0c
+# the start and end, 0x0f the data, 0x10-0x11 delta-N, 0x12 the level.
+# The status read (offset 0) shows 0x08 BRDY, 0x10 EOS and 0x01 playing.
+0 w 0 08 1 01  # ROM: 32-byte units
+0 w 0 09 1 00 0 0a 1 00 0 0b 1 01 0 0c 1 00  # 64 bytes of the sine
+0 w 0 10 1 00 0 11 1 40
+0 w 0 12 1 ff 0 07 1 b0  # start, repeat
+1 r 0
+500 r 0
+520 r 0
+1100 r 0
+2000 r 0
+4000 w 0 08 1 00  # 1-bit RAM now: the end is byte 7, or the next pass
+4001 r 0
+5000 r 0
+6000 w 0 08 1 02  # 8-bit DRAM: 32-byte units
+6000 w 0 09 1 20 0 0a 1 00 0 0b 1 23 0 0c 1 00  # 128 bytes of the ramp
+6000 w 0 10 1 00 0 11 1 90
+6000 w 0 07 1 b0
+9000 w 0 07 1 a0  # repeat off restarts, and ends once
+9500 r 0
+10000 r 0
+10500 w 0 07 1 b1  # start with reset: reset wins
+10501 r 0
+11000 w 0 07 1 b0
+11001 r 0
+13000 w 0 07 1 01  # reset alone
+13001 r 0
+14000 w 0 08 1 01
+14000 w 0 09 1 60 0 0a 1 00 0 0b 1 60 0 0c 1 00  # one unit of the square
+14000 w 0 10 1 ff 0 11 1 ff
+14000 w 0 07 1 b0
+14100 r 0
+17000 w 0 08 1 41  # note select on the FM side, ROM kept
+17001 r 0
+20000 w 0 07 1 30  # execute off
+20001 r 0
+22000 w 0 09 1 80 0 0a 1 00 0 0b 1 9f 0 0c 1 00
+22000 w 0 07 1 b0
+26000 w 0 07 1 00
+26001 r 0

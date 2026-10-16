@@ -1,0 +1,178 @@
+chip y8950
+clock 3579545
+samples 20000
+mem adpcm-b y8950.bin
+# Recording to external memory: with 0x07 = 0x60 (record, external), each
+# data write (0x0f) goes out through the interface (recorded as events)
+# and advances, the first one loading the start address; at the end
+# address EOS is set and the write is dropped, so the last byte of the
+# span keeps its old value. Then the recorded bytes play back. Recording
+# again over the sine leaves part of it rewritten. Data writes with start
+# and record both set go nowhere, and the channel does not play.
+# The image y8950.bin (written by tests/adpcm.rs): 1 KB segments at 0x000
+# (a sine), 0x400 (a ramp), 0x800 (noise) and 0xc00 (a square loud enough
+# to clamp), then a 4 KB chirp at 0x1000. In RAM with 1-bit access (0x08
+# bits 0-1 clear) an address unit is 4 bytes, in ROM or 8-bit RAM 32 bytes.
+# Register 0x07 is ADPCM-B's control (0x80 start, 0x40 record, 0x20
+# external memory, 0x10 repeat, 0x08 speaker off, 0x01 reset), 0x09-0x0c
+# the start and end, 0x0f the data, 0x10-0x11 delta-N, 0x12 the level.
+# The status read (offset 0) shows 0x08 BRDY, 0x10 EOS and 0x01 playing.
+0 w 0 08 1 00
+0 w 0 09 1 00 0 0a 1 04 0 0b 1 0f 0 0c 1 04  # 0x1000-0x103f, 64 bytes over the chirp
+0 r 0
+10 w 0 07 1 60  # record, external: two dummy reads pending
+11 r 0
+20 w 0 0f 1 ff
+20 r 0
+24 w 0 0f 1 ff
+24 r 0
+28 w 0 0f 1 fb
+32 w 0 0f 1 00
+36 w 0 0f 1 80
+40 w 0 0f 1 00
+44 w 0 0f 1 00
+48 w 0 0f 1 00
+52 w 0 0f 1 00
+56 w 0 0f 1 10
+60 w 0 0f 1 10
+64 w 0 0f 1 12
+68 w 0 0f 1 11
+72 w 0 0f 1 22
+76 w 0 0f 1 23
+80 w 0 0f 1 33
+84 w 0 0f 1 44
+88 w 0 0f 1 23
+92 w 0 0f 1 43
+96 w 0 0f 1 33
+100 w 0 0f 1 44
+104 w 0 0f 1 24
+108 w 0 0f 1 23
+112 w 0 0f 1 34
+116 w 0 0f 1 34
+120 w 0 0f 1 24
+124 w 0 0f 1 23
+128 w 0 0f 1 43
+132 w 0 0f 1 33
+136 w 0 0f 1 44
+140 w 0 0f 1 24
+144 w 0 0f 1 23
+148 w 0 0f 1 34
+152 w 0 0f 1 34
+156 w 0 0f 1 24
+160 w 0 0f 1 23
+164 w 0 0f 1 43
+168 w 0 0f 1 33
+172 w 0 0f 1 44
+176 w 0 0f 1 23
+180 w 0 0f 1 43
+184 w 0 0f 1 34
+188 w 0 0f 1 33
+192 w 0 0f 1 43
+196 w 0 0f 1 43
+200 w 0 0f 1 34
+204 w 0 0f 1 34
+208 w 0 0f 1 33
+212 w 0 0f 1 43
+216 w 0 0f 1 35
+220 w 0 0f 1 ff
+224 w 0 0f 1 ff
+228 w 0 0f 1 a8
+232 w 0 0f 1 08
+236 w 0 0f 1 00
+240 w 0 0f 1 80
+244 w 0 0f 1 08
+248 w 0 0f 1 00
+252 w 0 0f 1 00
+256 w 0 0f 1 81
+260 w 0 0f 1 00
+264 w 0 0f 1 00
+268 w 0 0f 1 01
+268 r 0
+272 w 0 0f 1 01  # the end: EOS, dropped
+272 r 0
+276 w 0 0f 1 11
+276 r 0
+280 w 0 0f 1 21
+284 w 0 0f 1 22
+288 w 0 0f 1 23
+292 w 0 0f 1 33
+296 w 0 0f 1 43
+1000 w 0 07 1 20  # stop recording: EOS cleared
+1001 r 0
+1100 w 0 10 1 00 0 11 1 80
+1100 w 0 12 1 ff 0 07 1 a0  # play it back
+1400 r 0
+2000 w 0 09 1 10 0 0a 1 00 0 0b 1 13 0 0c 1 00  # 0x40-0x4f, inside the sine
+2000 w 0 07 1 60
+2010 w 0 0f 1 00
+2013 w 0 0f 1 35
+2016 w 0 0f 1 6a
+2019 w 0 0f 1 9f
+2022 w 0 0f 1 d4
+2025 w 0 0f 1 09
+2028 w 0 0f 1 3e
+2031 w 0 0f 1 73
+2034 w 0 0f 1 a8
+2037 w 0 0f 1 dd
+2040 w 0 0f 1 12
+2043 w 0 0f 1 47
+2046 w 0 0f 1 7c
+2049 w 0 0f 1 b1
+2052 w 0 0f 1 e6
+2055 w 0 0f 1 1b
+2058 w 0 0f 1 50
+2061 w 0 0f 1 85
+2064 w 0 0f 1 ba
+2067 w 0 0f 1 ef
+2200 w 0 07 1 20
+2300 w 0 09 1 00 0 0a 1 00 0 0b 1 ff 0 0c 1 00
+2300 w 0 07 1 a0  # the sine, rewritten in part
+8000 w 0 07 1 e0  # start and record: neither path
+8001 w 0 0f 1 12 0 0f 1 34
+8002 r 0
+9000 w 0 08 1 01  # ROM, 32-byte units
+9000 w 0 09 1 80 0 0a 1 00 0 0b 1 80 0 0c 1 00  # 0x1000-0x101f
+9000 w 0 07 1 60
+9010 w 0 0f 1 ff
+9012 w 0 0f 1 fe
+9014 w 0 0f 1 fd
+9016 w 0 0f 1 fc
+9018 w 0 0f 1 fb
+9020 w 0 0f 1 fa
+9022 w 0 0f 1 f9
+9024 w 0 0f 1 f8
+9026 w 0 0f 1 f7
+9028 w 0 0f 1 f6
+9030 w 0 0f 1 f5
+9032 w 0 0f 1 f4
+9034 w 0 0f 1 f3
+9036 w 0 0f 1 f2
+9038 w 0 0f 1 f1
+9040 w 0 0f 1 f0
+9042 w 0 0f 1 ef
+9044 w 0 0f 1 ee
+9046 w 0 0f 1 ed
+9048 w 0 0f 1 ec
+9050 w 0 0f 1 eb
+9052 w 0 0f 1 ea
+9054 w 0 0f 1 e9
+9056 w 0 0f 1 e8
+9058 w 0 0f 1 e7
+9060 w 0 0f 1 e6
+9062 w 0 0f 1 e5
+9064 w 0 0f 1 e4
+9066 w 0 0f 1 e3
+9068 w 0 0f 1 e2
+9070 w 0 0f 1 e1
+9072 w 0 0f 1 e0
+9074 w 0 0f 1 df
+9076 w 0 0f 1 de
+9078 w 0 0f 1 dd
+9080 w 0 0f 1 dc
+9082 w 0 0f 1 db
+9084 w 0 0f 1 da
+9086 w 0 0f 1 d9
+9088 w 0 0f 1 d8
+9200 w 0 07 1 20
+9300 w 0 09 1 80 0 0a 1 00 0 0b 1 81 0 0c 1 00
+9300 w 0 07 1 a0

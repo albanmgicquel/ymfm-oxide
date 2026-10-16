@@ -893,7 +893,252 @@ impl<I: Interface> Ym3526<I> {
     }
 }
 
-// ---- Y8950: not yet ported ----
+//*********************************************************
+//  Y8950
+//*********************************************************
+
+use crate::adpcm::AdpcmBEngine;
+use crate::ymfm::AccessClass;
+
+/// The Yamaha Y8950 (MSX-AUDIO): the OPL's nine 2-operator channels with an
+/// ADPCM-B channel beside them, a keyboard port and four I/O lines, and one
+/// output through a floating-point DAC.
+///
+/// The ADPCM-B sample memory is the interface's `AdpcmB` class, and the
+/// keyboard and I/O ports are its `Io` class: keyboard in and out at address
+/// 1, the I/O lines at address 0.
+#[derive(Clone)]
+pub struct Y8950<I: Interface = NullInterface> {
+    /// The address register.
+    address: u8,
+    /// The data direction register for I/O.
+    io_ddr: u8,
+    /// The core FM engine.
+    fm: FmEngine<Opl1Registers, I>,
+    /// The ADPCM-B engine.
+    adpcm_b: AdpcmBEngine,
+}
+
+impl<I: Interface> Y8950<I> {
+    /// The number of outputs.
+    pub const OUTPUTS: usize = 1;
+
+    /// The status bit for a playing ADPCM-B sample.
+    pub const STATUS_ADPCM_B_PLAYING: u8 = 0x01;
+    /// The status bit for the ADPCM-B buffer being ready.
+    pub const STATUS_ADPCM_B_BRDY: u8 = 0x08;
+    /// The status bit for the ADPCM-B end of sample.
+    pub const STATUS_ADPCM_B_EOS: u8 = 0x10;
+    /// Every status bit that could signal an IRQ. ymfm declares it but never
+    /// installs it as the IRQ mask, so only the timers raise the IRQ line.
+    pub const ALL_IRQS: u8 = Self::STATUS_ADPCM_B_BRDY
+        | Self::STATUS_ADPCM_B_EOS
+        | FmEngine::<Opl1Registers, I>::STATUS_TIMERA
+        | FmEngine::<Opl1Registers, I>::STATUS_TIMERB;
+
+    /// Creates a chip that talks to the system through `intf`, reset.
+    pub fn new(intf: I) -> Self {
+        let mut chip = Y8950 {
+            address: 0,
+            io_ddr: 0,
+            fm: FmEngine::new(intf),
+            adpcm_b: AdpcmBEngine::new(0),
+        };
+        chip.reset();
+        chip
+    }
+
+    /// Resets the chip.
+    pub fn reset(&mut self) {
+        // reset the engines
+        self.fm.reset();
+        self.adpcm_b.reset();
+    }
+
+    /// Returns the output sample rate for an input clock.
+    pub fn sample_rate(&self, input_clock: u32) -> u32 {
+        self.fm.sample_rate(input_clock)
+    }
+
+    /// Invalidates the cached operator data.
+    pub fn invalidate_caches(&mut self) {
+        self.fm.invalidate_caches();
+    }
+
+    /// Reads the status register, with the live ADPCM-B bits.
+    pub fn read_status(&mut self) -> u8 {
+        // start with current FM status, masking out bits we might set
+        let mut status = self.fm.status()
+            & !(Self::STATUS_ADPCM_B_EOS
+                | Self::STATUS_ADPCM_B_BRDY
+                | Self::STATUS_ADPCM_B_PLAYING);
+
+        // insert the live ADPCM status bits
+        let adpcm_status = self.adpcm_b.status();
+        if (adpcm_status & AdpcmBEngine::STATUS_EOS) != 0 {
+            status |= Self::STATUS_ADPCM_B_EOS;
+        }
+        if (adpcm_status & AdpcmBEngine::STATUS_BRDY) != 0 {
+            status |= Self::STATUS_ADPCM_B_BRDY;
+        }
+        if (adpcm_status & AdpcmBEngine::STATUS_PLAYING) != 0 {
+            status |= Self::STATUS_ADPCM_B_PLAYING;
+        }
+
+        // run it through the FM engine to handle interrupts for us
+        self.fm.set_reset_status(status, !status)
+    }
+
+    /// Reads the data port: the keyboard, the I/O lines, or ADPCM data.
+    pub fn read_data(&mut self) -> u8 {
+        match self.address {
+            // keyboard in
+            0x05 => self.fm.intf_mut().external_read(AccessClass::Io, 1),
+
+            // ADPCM data; ymfm passes these on as ADPCM-B registers 2 and
+            // 0x13, neither of which is the data register 8, so they read 0
+            0x09 | 0x1a => {
+                self.adpcm_b
+                    .read(u32::from(self.address) - 0x07, self.fm.intf_mut()) as u8
+            }
+
+            // I/O data
+            0x19 => self.fm.intf_mut().external_read(AccessClass::Io, 0),
+
+            _ => 0xff,
+        }
+    }
+
+    /// Reads from the chip: the status at offset 0, the data port at 1.
+    pub fn read(&mut self, offset: u32) -> u8 {
+        match offset & 1 {
+            0 => self.read_status(), // status port
+            // when A0=1 datasheet says "the data on the bus are not
+            // guaranteed"
+            _ => self.read_data(),
+        }
+    }
+
+    /// Writes the address register.
+    pub fn write_address(&mut self, data: u8) {
+        // Y8950 doesn't expose a busy signal, but it does indicate that
+        // address writes should be no faster than every 12 clocks
+        let busy = 12 * self.fm.clock_prescale();
+        self.fm.intf_mut().set_busy_end(busy);
+
+        // just set the address
+        self.address = data;
+    }
+
+    /// Writes the data register.
+    pub fn write_data(&mut self, data: u8) {
+        // Y8950 doesn't expose a busy signal, but it does indicate that data
+        // writes should be no faster than every 12 clocks for registers
+        // 00-1A, or every 84 clocks for other registers
+        let busy = if self.address <= 0x1a { 12 } else { 84 } * self.fm.clock_prescale();
+        self.fm.intf_mut().set_busy_end(busy);
+
+        // handle special addresses
+        match self.address {
+            // IRQ control
+            0x04 => {
+                self.fm.write(u16::from(self.address), data);
+                self.read_status();
+            }
+
+            // keyboard out
+            0x06 => self.fm.intf_mut().external_write(AccessClass::Io, 1, data),
+
+            // split FM/ADPCM-B
+            0x08 => {
+                self.adpcm_b.write(
+                    u32::from(self.address) - 0x07,
+                    (data & 0x0f) | 0x80,
+                    self.fm.intf_mut(),
+                );
+                self.fm.write(u16::from(self.address), data & 0xc0);
+            }
+
+            // ADPCM-B registers
+            0x07 | 0x09..=0x12 | 0x15..=0x17 => {
+                self.adpcm_b
+                    .write(u32::from(self.address) - 0x07, data, self.fm.intf_mut());
+            }
+
+            // I/O direction
+            0x18 => self.io_ddr = data & 0x0f,
+
+            // I/O data
+            0x19 => {
+                let value = data & self.io_ddr;
+                self.fm.intf_mut().external_write(AccessClass::Io, 0, value);
+            }
+
+            // everything else to FM
+            _ => self.fm.write(u16::from(self.address), data),
+        }
+    }
+
+    /// Writes to the chip: the address port at offset 0, the data port at 1.
+    pub fn write(&mut self, offset: u32, data: u8) {
+        match offset & 1 {
+            0 => self.write_address(data), // address port
+            _ => self.write_data(data),    // data port
+        }
+    }
+
+    /// Generates one sample into each element of `output`.
+    pub fn generate(&mut self, output: &mut [Output<1>]) {
+        for out in output.iter_mut() {
+            // clock the system
+            self.fm.clock(FmEngine::<Opl1Registers, I>::ALL_CHANNELS);
+            self.adpcm_b.clock(self.fm.intf_mut());
+
+            // update the FM content; clipping need verification
+            self.fm.output(
+                &mut out.clear().data,
+                1,
+                32767,
+                FmEngine::<Opl1Registers, I>::ALL_CHANNELS,
+            );
+
+            // mix in the ADPCM; ADPCM-B is stereo, but only one channel not
+            // sure how it's wired up internally
+            self.adpcm_b.output(out, 3);
+
+            // Y8950 uses an external DAC (YM3014) with mantissa/exponent
+            // format; convert to 10.3 floating point value and back to
+            // simulate truncation
+            out.roundtrip_fp();
+        }
+    }
+
+    /// Reports the expiry of timer `tnum` (0 or 1), which the interface's
+    /// `set_timer` asked for.
+    pub fn timer_expired(&mut self, tnum: u32) {
+        self.fm.engine_timer_expired(tnum);
+    }
+
+    /// Returns the interface.
+    pub fn intf(&self) -> &I {
+        self.fm.intf()
+    }
+
+    /// Returns the interface, mutably.
+    pub fn intf_mut(&mut self) -> &mut I {
+        self.fm.intf_mut()
+    }
+
+    /// Returns the FM register file as last written, for a diagnostic.
+    pub fn registers(&self) -> &[u8] {
+        self.fm.regs().data()
+    }
+
+    /// Returns the ADPCM-B register file as last written, for a diagnostic.
+    pub fn adpcm_b_registers(&self) -> &[u8] {
+        self.adpcm_b.registers()
+    }
+}
 
 //*********************************************************
 //  YM3812

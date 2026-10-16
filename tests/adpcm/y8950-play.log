@@ -1,0 +1,53 @@
+chip y8950
+clock 3579545
+samples 30000
+mem adpcm-b y8950.bin
+# ADPCM-B playback from RAM, every segment in turn, with the level and
+# delta-N changed while it plays, EOS at each end, and execute off clearing
+# EOS.
+# The image y8950.bin (written by tests/adpcm.rs): 1 KB segments at 0x000
+# (a sine), 0x400 (a ramp), 0x800 (noise) and 0xc00 (a square loud enough
+# to clamp), then a 4 KB chirp at 0x1000. In RAM with 1-bit access (0x08
+# bits 0-1 clear) an address unit is 4 bytes, in ROM or 8-bit RAM 32 bytes.
+# Register 0x07 is ADPCM-B's control (0x80 start, 0x40 record, 0x20
+# external memory, 0x10 repeat, 0x08 speaker off, 0x01 reset), 0x09-0x0c
+# the start and end, 0x0f the data, 0x10-0x11 delta-N, 0x12 the level.
+# The status read (offset 0) shows 0x08 BRDY, 0x10 EOS and 0x01 playing.
+0 r 0  # BRDY after reset
+0 w 0 08 1 00  # RAM, 1-bit access: 4-byte units
+0 w 0 09 1 00 0 0a 1 00 0 0b 1 ff 0 0c 1 00  # the sine
+0 w 0 10 1 00 0 11 1 80  # a nibble every other sample
+0 w 0 12 1 ff
+10 w 0 07 1 a0  # start, from external memory
+11 r 0
+2000 w 0 12 1 80
+2001 r 0
+3000 w 0 12 1 20
+3500 w 0 12 1 ff
+4100 r 0
+4120 r 0  # EOS: 2048 nibbles at half rate
+4300 w 0 07 1 20  # execute off clears EOS
+4301 r 0
+5000 w 0 09 1 00 0 0a 1 01 0 0b 1 ff 0 0c 1 01  # the ramp
+5000 w 0 10 1 00 0 11 1 c0
+5000 w 0 12 1 c0 0 07 1 a0
+6000 w 0 10 1 ff 0 11 1 ff
+6400 w 0 10 1 00 0 11 1 40
+6401 r 0
+9000 w 0 09 1 00 0 0a 1 02 0 0b 1 ff 0 0c 1 02  # noise
+9000 w 0 10 1 00 0 11 1 60
+9000 w 0 07 1 a0
+12000 w 0 07 1 a8  # speaker off, which ymfm ignores; a write with start restarts
+12001 r 0
+15000 w 0 09 1 00 0 0a 1 04 0 0b 1 ff 0 0c 1 07  # the chirp
+15000 w 0 10 1 00 0 11 1 e0
+15000 w 0 07 1 a0
+16000 r 0
+18000 r 0
+20000 r 0
+22000 r 0
+24000 r 0
+24500 r 0  # EOS
+26000 w 0 07 1 00  # stop
+26001 r 0
+29000 r 0

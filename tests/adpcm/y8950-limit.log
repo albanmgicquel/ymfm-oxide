@@ -1,0 +1,38 @@
+chip y8950
+clock 3579545
+samples 24000
+mem adpcm-b y8950.bin
+# The wrap at the limit address: Y8950 does not reach ADPCM-B's limit
+# register (0x13 and 0x14 go to the FM side), so it stays wide open at
+# 0xffff, and a sample that starts in the last unit wraps to address 0
+# after the unit's last byte, as at_limit() has it. The bytes past the
+# image read as 0.
+# The image y8950.bin (written by tests/adpcm.rs): 1 KB segments at 0x000
+# (a sine), 0x400 (a ramp), 0x800 (noise) and 0xc00 (a square loud enough
+# to clamp), then a 4 KB chirp at 0x1000. In RAM with 1-bit access (0x08
+# bits 0-1 clear) an address unit is 4 bytes, in ROM or 8-bit RAM 32 bytes.
+# Register 0x07 is ADPCM-B's control (0x80 start, 0x40 record, 0x20
+# external memory, 0x10 repeat, 0x08 speaker off, 0x01 reset), 0x09-0x0c
+# the start and end, 0x0f the data, 0x10-0x11 delta-N, 0x12 the level.
+# The status read (offset 0) shows 0x08 BRDY, 0x10 EOS and 0x01 playing.
+0 w 0 13 1 00 0 14 1 00  # not the limit on the Y8950
+0 w 0 08 1 00
+0 w 0 09 1 fe 0 0a 1 ff 0 0b 1 ff 0 0c 1 00  # 0x3fff8: 8 bytes before the wrap
+0 w 0 10 1 00 0 11 1 c0
+0 w 0 12 1 ff 0 07 1 a0
+1 r 0
+20 r 0
+3000 r 0
+3200 r 0
+6000 w 0 08 1 01  # ROM: 0x1fffe0, 32 bytes before the wrap
+6000 w 0 09 1 ff 0 0a 1 ff 0 0b 1 1f 0 0c 1 00
+6000 w 0 07 1 a0
+9000 r 0
+12000 w 0 08 1 01
+12000 w 0 09 1 ff 0 0a 1 ff 0 0b 1 03 0 0c 1 00  # repeating across the wrap
+12000 w 0 10 1 ff 0 11 1 ff
+12000 w 0 07 1 b0
+12500 r 0
+13000 r 0
+18000 r 0
+20000 w 0 07 1 00

@@ -1,0 +1,68 @@
+chip y8950
+clock 3579545
+samples 30000
+mem adpcm-b y8950.bin
+# The OPL side and the status register: FM voices, the timers with their
+# flags, masks and IRQ line, the status masks for the ADPCM bits (0x04 bit
+# 3 hides BRDY and bit 4 EOS, which never raise the IRQ: ymfm keeps the
+# timers' IRQ mask), note select and CSM through the split register 0x08,
+# and rhythm mode.
+# The image y8950.bin (written by tests/adpcm.rs): 1 KB segments at 0x000
+# (a sine), 0x400 (a ramp), 0x800 (noise) and 0xc00 (a square loud enough
+# to clamp), then a 4 KB chirp at 0x1000. In RAM with 1-bit access (0x08
+# bits 0-1 clear) an address unit is 4 bytes, in ROM or 8-bit RAM 32 bytes.
+# Register 0x07 is ADPCM-B's control (0x80 start, 0x40 record, 0x20
+# external memory, 0x10 repeat, 0x08 speaker off, 0x01 reset), 0x09-0x0c
+# the start and end, 0x0f the data, 0x10-0x11 delta-N, 0x12 the level.
+# The status read (offset 0) shows 0x08 BRDY, 0x10 EOS and 0x01 playing.
+0 w 0 20 1 01 0 23 1 21 0 40 1 3f 0 43 1 08 0 63 1 f0 0 83 1 0f 0 a0 1 41 0 b0 1 32
+0 w 0 21 1 02 0 24 1 01 0 41 1 10 0 44 1 00 0 61 1 f4 0 64 1 f4 0 81 1 27 0 84 1 27 0 a1 1 81 0 c1 1 0e 0 b1 1 2d  # channel 1 with feedback
+0 w 0 02 1 f0  # timer A: 64 samples
+0 w 0 03 1 c0  # timer B: 1024 samples
+0 r 0
+0 w 0 04 1 03  # load both
+50 r 0
+70 r 0  # timer A and the IRQ
+100 w 0 04 1 80  # IRQ reset
+101 r 0
+1100 r 0
+1200 w 0 04 1 4b  # mask timer A and BRDY
+1201 r 0
+1300 r 0
+1400 w 0 04 1 13  # mask EOS
+1401 r 0
+1500 w 0 08 1 00
+1500 w 0 09 1 00 0 0a 1 00 0 0b 1 07 0 0c 1 00  # a short sample
+1500 w 0 10 1 ff 0 11 1 ff
+1500 w 0 12 1 80 0 07 1 a0
+1600 r 0  # EOS, masked
+1700 w 0 04 1 03  # unmasked
+1701 r 0  # EOS shows
+1800 w 0 04 1 00
+1801 w 0 04 1 80
+1802 r 0
+3000 w 0 02 1 c0 0 04 1 01
+3000 w 0 08 1 80  # CSM: timer A keys every channel on
+3300 r 0
+3600 r 0
+5000 w 0 08 1 40  # note select, CSM off
+5000 w 0 04 1 00
+5000 w 0 20 1 31 0 23 1 31  # key scale rate
+5001 w 0 04 1 80
+6000 w 0 b0 1 12  # key off
+7000 w 0 08 1 00
+7000 w 0 30 1 01 0 33 1 01 0 50 1 10 0 53 1 00 0 70 1 f8 0 73 1 f6 0 90 1 77 0 93 1 77 0 a6 1 40 0 b6 1 09 0 c6 1 00 0 31 1 01 0 34 1 01 0 51 1 00 0 54 1 00 0 71 1 f6 0 74 1 f6 0 91 1 56 0 94 1 56 0 a7 1 50 0 b7 1 05 0 32 1 01 0 35 1 01 0 52 1 00 0 55 1 00 0 72 1 f5 0 75 1 f7 0 92 1 56 0 95 1 56 0 a8 1 c0 0 b8 1 09  # the rhythm voices
+7000 w 0 bd 1 30
+8500 w 0 bd 1 21
+10000 w 0 bd 1 28
+11500 w 0 bd 1 24
+13000 w 0 bd 1 22
+14500 w 0 bd 1 3f
+16000 w 0 bd 1 20
+18000 w 0 bd 1 c0  # both LFO depths, rhythm off
+18000 w 0 20 1 c1 0 23 1 c1 0 b0 1 32
+24000 w 0 01 1 20  # the test register
+26000 w 0 03 1 fe 0 04 1 02
+26100 r 0
+27000 r 0
+28000 r 0
