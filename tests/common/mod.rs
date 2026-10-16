@@ -305,15 +305,36 @@ pub fn parse(text: &str, directory: &Path) -> Log {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Render {
     pub outputs: usize,
-    pub samples: Vec<i16>,
+    pub samples: Vec<i32>,
     pub irq: Vec<u8>,
     pub events: Vec<Event>,
 }
 
-/// Reads a render in the oracle's binary format.
+/// The render format's magic and the version this reads.
+const RENDER_MAGIC: &[u8; 4] = b"YMFR";
+const RENDER_VERSION: u32 = 2;
+
+/// Reads a render in the oracle's binary format, version 2.
 pub fn decode(bytes: &[u8], outputs: usize, samples: usize) -> Result<Render, String> {
-    let stride = outputs * 2 + 1;
-    let body = samples * stride;
+    let u32_at = |at: usize| u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap());
+    if bytes.len() < 16 || &bytes[..4] != RENDER_MAGIC {
+        return Err("the render does not start with the YMFR magic".to_string());
+    }
+    if u32_at(4) != RENDER_VERSION {
+        return Err(format!(
+            "the render is in version {} of the format, not {RENDER_VERSION}",
+            u32_at(4)
+        ));
+    }
+    if (u32_at(8) as usize, u32_at(12) as usize) != (outputs, samples) {
+        return Err(format!(
+            "the render holds {} samples of {} outputs; the log asks for {samples} of {outputs}",
+            u32_at(12),
+            u32_at(8)
+        ));
+    }
+    let stride = outputs * 4 + 1;
+    let body = 16 + samples * stride;
     if bytes.len() < body + 4 {
         return Err(format!(
             "the render holds {} bytes, short of {} samples of {outputs} outputs",
@@ -327,13 +348,12 @@ pub fn decode(bytes: &[u8], outputs: usize, samples: usize) -> Result<Render, St
         irq: Vec::with_capacity(samples),
         events: Vec::new(),
     };
-    for record in bytes[..body].chunks_exact(stride) {
-        for pair in record[..outputs * 2].as_chunks::<2>().0 {
-            render.samples.push(i16::from_le_bytes([pair[0], pair[1]]));
+    for record in bytes[16..body].chunks_exact(stride) {
+        for word in record[..outputs * 4].as_chunks::<4>().0 {
+            render.samples.push(i32::from_le_bytes(*word));
         }
-        render.irq.push(record[outputs * 2]);
+        render.irq.push(record[outputs * 4]);
     }
-    let u32_at = |at: usize| u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap());
     let count = u32_at(body) as usize;
     if bytes.len() != body + 4 + count * 11 {
         return Err(format!(
@@ -432,7 +452,7 @@ pub fn compare<C: Chip>(log: &Log, expected: &Render) -> Result<(), String> {
         let base = sample as usize * outputs;
         for (index, value) in output.iter().enumerate() {
             let want = expected.samples[base + index];
-            if *value != i32::from(want) {
+            if *value != want {
                 return Err(format!(
                     "sample {sample}, output {index}: ymfm gives {want} and this gives {value}\n{}",
                     describe(&chip, log, next)

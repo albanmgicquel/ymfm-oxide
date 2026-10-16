@@ -64,19 +64,26 @@
 //
 // The output
 // ----------
-// Little-endian binary, on standard output:
+// Little-endian binary, on standard output, in version 2 of the format:
 //
-//     for each sample: OUTPUTS x int16, every output the chip has, in its
-//                      order; then one byte, 1 if the IRQ line is asserted
-//                      after the sample and 0 if not
+//     4 bytes          the magic "YMFR"
+//     uint32           the format version, 2
+//     uint32           OUTPUTS, the number of outputs the chip has
+//     uint32           the number of samples
+//     for each sample: OUTPUTS x int32, every output the chip has, in its
+//                      order, exactly as ymfm's output_data holds it; then
+//                      one byte, 1 if the IRQ line is asserted after the
+//                      sample and 0 if not
 //     uint32           the number of events
 //     for each event:  uint32 sample, uint8 kind ('r' for a read, 'x' for an
 //                      external write), uint8 access class (0xff for a
 //                      read), uint32 address (the offset, for a read),
 //                      uint8 value
 //
-// An output that does not fit in 16 bits is an error, so the format can be
-// widened when a chip needs it rather than silently truncated.
+// ymfm's outputs are 32-bit, and some chips go past 16 bits: the YM2612 with
+// every channel clipped reaches +32768, the YM3438 -32896. Version 1, the
+// first, had no header and wrote each output as an int16, refusing any that
+// did not fit.
 
 #include "ymfm.h"
 #include "ymfm_misc.h"
@@ -102,6 +109,7 @@ namespace {
 
 constexpr uint64_t NEVER = UINT64_MAX;
 constexpr uint32_t MEMORY_LIMIT = 1u << 24;
+constexpr uint32_t FORMAT_VERSION = 2;
 
 struct Event {
     uint32_t sample;
@@ -258,11 +266,6 @@ Log parse(const char *path, Host &host) {
 
 void put(const void *data, size_t size) { fwrite(data, 1, size, stdout); }
 
-void put16(int16_t value) {
-    uint8_t bytes[2] = {uint8_t(value), uint8_t(uint16_t(value) >> 8)};
-    put(bytes, 2);
-}
-
 void put32(uint32_t value) {
     uint8_t bytes[4] = {uint8_t(value), uint8_t(value >> 8), uint8_t(value >> 16), uint8_t(value >> 24)};
     put(bytes, 4);
@@ -273,6 +276,10 @@ void render(const Log &log, Host &host) {
     Chip chip(host);
     chip.reset();
     typename Chip::output_data output;
+    put("YMFR", 4);
+    put32(FORMAT_VERSION);
+    put32(Chip::OUTPUTS);
+    put32(log.samples);
     size_t next = 0;
     for (uint32_t sample = 0; sample < log.samples; ++sample) {
         host.sample = sample;
@@ -290,12 +297,7 @@ void render(const Log &log, Host &host) {
         }
         chip.generate(&output, 1);
         for (uint32_t index = 0; index < Chip::OUTPUTS; ++index) {
-            int32_t value = output.data[index];
-            if (value < -32768 || value > 32767) {
-                fprintf(stderr, "oracle: output %u is %d at sample %u\n", index, value, sample);
-                exit(3);
-            }
-            put16(int16_t(value));
+            put32(uint32_t(output.data[index]));
         }
         uint8_t irq = host.irq ? 1 : 0;
         put(&irq, 1);
