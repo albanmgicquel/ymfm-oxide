@@ -1,0 +1,22 @@
+chip ym3806
+clock 3579545
+samples 12000
+# Every channel at full level on algorithm 7, all operators open, heavy
+# feedback: the sum overflows 14 bits, and the floating-point DAC truncation
+# shows on every sample.
+0 w 10 ff 18 00 28 32 38 00 20 42 30 10 40 20 40 81 60 00 80 1f a0 00 c0 00 e0 0f 48 20 48 81 68 00 88 1f a8 00 c8 00 e8 0f 50 20 50 81 70 00 90 1f b0 00 d0 00 f0 0f 58 20 58 81 78 00 98 1f b8 00 d8 00 f8 0f 5 78
+0 w 11 ff 19 00 29 32 39 20 21 42 31 40 41 20 41 82 61 00 81 1f a1 00 c1 00 e1 0f 49 20 49 82 69 00 89 1f a9 00 c9 00 e9 0f 51 20 51 82 71 00 91 1f b1 00 d1 00 f1 0f 59 20 59 82 79 00 99 1f b9 00 d9 00 f9 0f 5 79
+0 w 12 ff 1a 00 2a 32 3a 40 22 42 32 70 42 20 42 83 62 00 82 1f a2 00 c2 00 e2 0f 4a 20 4a 83 6a 00 8a 1f aa 00 ca 00 ea 0f 52 20 52 83 72 00 92 1f b2 00 d2 00 f2 0f 5a 20 5a 83 7a 00 9a 1f ba 00 da 00 fa 0f 5 7a
+0 w 13 ff 1b 00 2b 32 3b 60 23 42 33 a0 43 20 43 81 63 00 83 1f a3 00 c3 00 e3 0f 4b 20 4b 81 6b 00 8b 1f ab 00 cb 00 eb 0f 53 20 53 81 73 00 93 1f b3 00 d3 00 f3 0f 5b 20 5b 81 7b 00 9b 1f bb 00 db 00 fb 0f 5 7b
+0 w 14 ff 1c 00 2c 32 3c 80 24 42 34 d0 44 20 44 82 64 00 84 1f a4 00 c4 00 e4 0f 4c 20 4c 82 6c 00 8c 1f ac 00 cc 00 ec 0f 54 20 54 82 74 00 94 1f b4 00 d4 00 f4 0f 5c 20 5c 82 7c 00 9c 1f bc 00 dc 00 fc 0f 5 7c
+0 w 15 ff 1d 00 2d 32 3d a0 25 43 35 00 45 20 45 83 65 00 85 1f a5 00 c5 00 e5 0f 4d 20 4d 83 6d 00 8d 1f ad 00 cd 00 ed 0f 55 20 55 83 75 00 95 1f b5 00 d5 00 f5 0f 5d 20 5d 83 7d 00 9d 1f bd 00 dd 00 fd 0f 5 7d
+0 w 16 ff 1e 00 2e 32 3e c0 26 43 36 30 46 20 46 81 66 00 86 1f a6 00 c6 00 e6 0f 4e 20 4e 81 6e 00 8e 1f ae 00 ce 00 ee 0f 56 20 56 81 76 00 96 1f b6 00 d6 00 f6 0f 5e 20 5e 81 7e 00 9e 1f be 00 de 00 fe 0f 5 7e
+0 w 17 ff 1f 00 2f 32 3f e0 27 43 37 60 47 20 47 82 67 00 87 1f a7 00 c7 00 e7 0f 4f 20 4f 82 6f 00 8f 1f af 00 cf 00 ef 0f 57 20 57 82 77 00 97 1f b7 00 d7 00 f7 0f 5f 20 5f 82 7f 00 9f 1f bf 00 df 00 ff 0f 5 7f
+8000 w 5 00
+8000 w 5 01
+8000 w 5 02
+8000 w 5 03
+8000 w 5 04
+8000 w 5 05
+8000 w 5 06
+8000 w 5 07

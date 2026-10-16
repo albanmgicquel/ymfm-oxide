@@ -1,0 +1,78 @@
+chip ym3806
+clock 3579545
+samples 82000
+# The LFO: every rate 0 to 7, AM sensitivity 0 to 3 with AM enabled on some
+# operators only, PM sensitivity 1 to 7 at low and high frequency numbers, the
+# LFO disable bit (which holds the LFO in reset) toggled in mid-note, and the
+# rate changed while running.
+0 w 4 00
+0 w 10 87 18 01 28 44 38 00 20 44 30 00 40 20 40 81 60 7f 80 1f a0 00 c0 00 e0 0f 48 20 48 81 68 7f 88 1f a8 00 c8 00 e8 0f 50 20 50 81 70 7f 90 1f b0 00 d0 00 f0 0f 58 20 58 81 78 00 98 1f b8 80 d8 00 f8 0f 5 40
+0 w 11 47 19 03 29 44 39 80 21 44 31 80 41 20 41 81 61 7f 81 1f a1 00 c1 00 e1 0f 49 20 49 81 69 7f 89 1f a9 00 c9 00 e9 0f 51 20 51 81 71 7f 91 1f b1 00 d1 00 f1 0f 59 20 59 81 79 00 99 1f b9 80 d9 00 f9 0f 5 41
+0 w 12 c7 1a 70 2a 57 3a ff 22 57 32 ff 42 20 42 81 62 7f 82 1f a2 00 c2 00 e2 0f 4a 20 4a 81 6a 7f 8a 1f aa 00 ca 00 ea 0f 52 20 52 81 72 7f 92 1f b2 00 d2 00 f2 0f 5a 20 5a 81 7a 00 9a 1f ba 00 da 00 fa 0f 5 42
+0 w 4 00  # LFO rate 0
+3000 w 4 01  # LFO rate 1
+6000 w 4 02  # LFO rate 2
+9000 w 4 03  # LFO rate 3
+12000 w 4 04  # LFO rate 4
+15000 w 4 05  # LFO rate 5
+18000 w 4 06  # LFO rate 6
+21000 w 4 07  # LFO rate 7
+24000 w 4 08  # LFO disabled
+26000 w 4 06  # enabled again
+28000 w 5 00
+28000 w 5 01
+28000 w 5 02
+30000 w 4 07
+30000 w 13 c4 1b 00 2b 43 3b 00 23 44 33 00 43 20 43 81 63 20 83 1f a3 80 c3 00 e3 0f 4b 20 4b 81 6b 04 8b 1f ab 00 cb 00 eb 0f 53 20 53 81 73 20 93 1f b3 00 d3 00 f3 0f 5b 20 5b 81 7b 04 9b 1f bb 80 db 00 fb 0f 5 7b  # AM sensitivity 0
+32800 w 5 03
+33000 w 13 c4 1b 01 2b 43 3b 00 23 44 33 00 43 20 43 81 63 20 83 1f a3 80 c3 00 e3 0f 4b 20 4b 81 6b 04 8b 1f ab 00 cb 00 eb 0f 53 20 53 81 73 20 93 1f b3 00 d3 00 f3 0f 5b 20 5b 81 7b 04 9b 1f bb 80 db 00 fb 0f 5 7b  # AM sensitivity 1
+35800 w 5 03
+36000 w 13 c4 1b 02 2b 43 3b 00 23 44 33 00 43 20 43 81 63 20 83 1f a3 80 c3 00 e3 0f 4b 20 4b 81 6b 04 8b 1f ab 00 cb 00 eb 0f 53 20 53 81 73 20 93 1f b3 00 d3 00 f3 0f 5b 20 5b 81 7b 04 9b 1f bb 80 db 00 fb 0f 5 7b  # AM sensitivity 2
+38800 w 5 03
+39000 w 13 c4 1b 03 2b 43 3b 00 23 44 33 00 43 20 43 81 63 20 83 1f a3 80 c3 00 e3 0f 4b 20 4b 81 6b 04 8b 1f ab 00 cb 00 eb 0f 53 20 53 81 73 20 93 1f b3 00 d3 00 f3 0f 5b 20 5b 81 7b 04 9b 1f bb 80 db 00 fb 0f 5 7b  # AM sensitivity 3
+41800 w 5 03
+42000 w 14 e5 1c 10 2c 20 3c c0 24 20 34 95 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 1, block 2
+42000 w 4 03
+44400 w 5 04
+44500 w 14 e5 1c 10 2c 6f 3c e0 24 6f 34 b5 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 1, block 6
+44500 w 4 07
+46900 w 5 04
+47000 w 14 e5 1c 20 2c 20 3c c0 24 20 34 95 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 2, block 2
+47000 w 4 04
+49400 w 5 04
+49500 w 14 e5 1c 20 2c 6f 3c e0 24 6f 34 b5 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 2, block 6
+49500 w 4 00
+51900 w 5 04
+52000 w 14 e5 1c 30 2c 20 3c c0 24 20 34 95 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 3, block 2
+52000 w 4 05
+54400 w 5 04
+54500 w 14 e5 1c 30 2c 6f 3c e0 24 6f 34 b5 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 3, block 6
+54500 w 4 01
+56900 w 5 04
+57000 w 14 e5 1c 40 2c 20 3c c0 24 20 34 95 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 4, block 2
+57000 w 4 06
+59400 w 5 04
+59500 w 14 e5 1c 40 2c 6f 3c e0 24 6f 34 b5 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 4, block 6
+59500 w 4 02
+61900 w 5 04
+62000 w 14 e5 1c 50 2c 20 3c c0 24 20 34 95 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 5, block 2
+62000 w 4 07
+64400 w 5 04
+64500 w 14 e5 1c 50 2c 6f 3c e0 24 6f 34 b5 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 5, block 6
+64500 w 4 03
+66900 w 5 04
+67000 w 14 e5 1c 60 2c 20 3c c0 24 20 34 95 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 6, block 2
+67000 w 4 00
+69400 w 5 04
+69500 w 14 e5 1c 60 2c 6f 3c e0 24 6f 34 b5 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 6, block 6
+69500 w 4 04
+71900 w 5 04
+72000 w 14 e5 1c 70 2c 20 3c c0 24 20 34 95 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 7, block 2
+72000 w 4 01
+74400 w 5 04
+74500 w 14 e5 1c 70 2c 6f 3c e0 24 6f 34 b5 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 38 4c 20 4c 83 6c 08 8c 1f ac 04 cc 01 ec 38 54 20 54 82 74 08 94 1f b4 04 d4 01 f4 38 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 38 5 7c  # PM sensitivity 7, block 6
+74500 w 4 05
+76900 w 5 04
+77000 w 4 0f  # disabled with PM still set
+77000 w 5 7c
+78500 w 4 05

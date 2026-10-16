@@ -1,0 +1,63 @@
+chip ym3806
+clock 3579545
+samples 40000
+# The two frequencies of a channel: operators 1 and 3 from 0x28/0x38, operators
+# 2 and 4 from 0x20/0x30. Algorithm 7 with all four operators open, the pairs
+# at different blocks and frequency numbers, then a sweep of every block with
+# the frequency number low byte and high nibble written separately, and the
+# unused bit 7 of the block register set.
+0 w 10 c7 18 00 28 44 38 00 20 56 30 00 40 20 40 81 60 10 80 1f a0 00 c0 00 e0 0f 48 20 48 81 68 10 88 1f a8 00 c8 00 e8 0f 50 20 50 81 70 10 90 1f b0 00 d0 00 f0 0f 58 20 58 81 78 10 98 1f b8 00 d8 00 f8 0f 5 78
+4000 w 28 83 38 21  # operators 1 and 3 move, bit 7 set
+8000 w 20 62 30 ff  # operators 2 and 4 move
+12000 w 5 28  # only operators 1 and 3 keyed
+15000 w 5 50  # only operators 2 and 4 keyed
+18000 w 5 00
+18000 w 11 c4 19 00 29 01 39 00 21 01 31 01 41 20 41 81 61 20 81 1f a1 02 c1 01 e1 38 49 20 49 83 69 08 89 1f a9 04 c9 01 e9 38 51 20 51 82 71 28 91 1f b1 02 d1 01 f1 38 59 20 59 81 79 08 99 1f b9 04 d9 01 f9 38 5 79
+18000 w 29 01 21 0e
+18400 w 39 00 31 00
+18800 w 29 07 21 08
+19200 w 39 00 31 00
+19600 w 29 0f 21 00
+20000 w 39 00 31 00
+20400 w 29 11 21 1e
+20800 w 39 25 31 5b
+21200 w 29 17 21 18
+21600 w 39 25 31 5b
+22000 w 29 1f 21 10
+22400 w 39 25 31 5b
+22800 w 29 21 21 2e
+23200 w 39 4a 31 b6
+23600 w 29 27 21 28
+24000 w 39 4a 31 b6
+24400 w 29 2f 21 20
+24800 w 39 4a 31 b6
+25200 w 29 31 21 3e
+25600 w 39 6f 31 11
+26000 w 29 37 21 38
+26400 w 39 6f 31 11
+26800 w 29 3f 21 30
+27200 w 39 6f 31 11
+27600 w 29 41 21 4e
+28000 w 39 94 31 6c
+28400 w 29 47 21 48
+28800 w 39 94 31 6c
+29200 w 29 4f 21 40
+29600 w 39 94 31 6c
+30000 w 29 51 21 5e
+30400 w 39 b9 31 c7
+30800 w 29 57 21 58
+31200 w 39 b9 31 c7
+31600 w 29 5f 21 50
+32000 w 39 b9 31 c7
+32400 w 29 61 21 6e
+32800 w 39 de 31 22
+33200 w 29 67 21 68
+33600 w 39 de 31 22
+34000 w 29 6f 21 60
+34400 w 39 de 31 22
+34800 w 29 71 21 7e
+35200 w 39 03 31 7d
+35600 w 29 77 21 78
+36000 w 39 03 31 7d
+36400 w 29 7f 21 70
+36800 w 39 03 31 7d

@@ -1,0 +1,64 @@
+chip ym3806
+clock 3579545
+samples 60000
+# The envelope: attack rates from 0 (never rises) through slow to the fastest,
+# decay to every few sustain levels including 15, sustain rates, release rates
+# 0 to 15, key-off in the middle of an attack and of the decay, and a re-key
+# while releasing. One carrier (algorithm 7, operator 4) per channel.
+0 w 10 c7 18 00 28 42 38 00 20 42 30 00 40 20 40 81 60 7f 80 1f a0 00 c0 00 e0 0f 48 20 48 81 68 7f 88 1f a8 00 c8 00 e8 0f 50 20 50 81 70 7f 90 1f b0 00 d0 00 f0 0f 58 20 58 81 78 00 98 00 b8 00 d8 00 f8 0f
+0 w 11 c7 19 00 29 42 39 50 21 42 31 50 41 20 41 81 61 7f 81 1f a1 00 c1 00 e1 0f 49 20 49 81 69 7f 89 1f a9 00 c9 00 e9 0f 51 20 51 81 71 7f 91 1f b1 00 d1 00 f1 0f 59 20 59 81 79 00 99 0a b9 05 d9 02 f9 46
+0 w 12 c7 1a 00 2a 42 3a a0 22 42 32 a0 42 20 42 81 62 7f 82 1f a2 00 c2 00 e2 0f 4a 20 4a 81 6a 7f 8a 1f aa 00 ca 00 ea 0f 52 20 52 81 72 7f 92 1f b2 00 d2 00 f2 0f 5a 20 5a 81 7a 00 9a 12 ba 0c da 06 fa 84
+0 w 13 c7 1b 00 2b 42 3b f0 23 42 33 f0 43 20 43 81 63 7f 83 1f a3 00 c3 00 e3 0f 4b 20 4b 81 6b 7f 8b 1f ab 00 cb 00 eb 0f 53 20 53 81 73 7f 93 1f b3 00 d3 00 f3 0f 5b 20 5b 81 7b 00 9b 18 bb 14 db 00 fb fa
+0 w 14 c7 1c 00 2c 43 3c 40 24 43 34 40 44 20 44 81 64 7f 84 1f a4 00 c4 00 e4 0f 4c 20 4c 81 6c 7f 8c 1f ac 00 cc 00 ec 0f 54 20 54 81 74 7f 94 1f b4 00 d4 00 f4 0f 5c 20 5c 81 7c 00 9c 1f bc 1f dc 1f fc 22
+0 w 15 c7 1d 00 2d 43 3d 90 25 43 35 90 45 20 45 81 65 7f 85 1f a5 00 c5 00 e5 0f 4d 20 4d 81 6d 7f 8d 1f ad 00 cd 00 ed 0f 55 20 55 81 75 7f 95 1f b5 00 d5 00 f5 0f 5d 20 5d 81 7d 00 9d 1f bd 08 dd 0c fd 60
+0 w 16 c7 1e 00 2e 43 3e e0 26 43 36 e0 46 20 46 81 66 7f 86 1f a6 00 c6 00 e6 0f 4e 20 4e 81 6e 7f 8e 1f ae 00 ce 00 ee 0f 56 20 56 81 76 7f 96 1f b6 00 d6 00 f6 0f 5e 20 5e 81 7e 00 9e 0e be 00 de 00 fe 0c
+0 w 17 c7 1f 00 2f 44 3f 30 27 44 37 30 47 20 47 81 67 7f 87 1f a7 00 c7 00 e7 0f 4f 20 4f 81 6f 7f 8f 1f af 00 cf 00 ef 0f 57 20 57 81 77 7f 97 1f b7 00 d7 00 f7 0f 5f 20 5f 81 7f 00 9f 1c bf 10 df 14 ff a1
+100 w 5 40
+150 w 5 41
+200 w 5 42
+250 w 5 43
+300 w 5 44
+350 w 5 45
+400 w 5 46
+450 w 5 47
+1500 w 5 06  # key-off during the attack
+6000 w 5 07  # key-off during the decay
+20000 w 5 00
+21000 w 5 01
+22000 w 5 02
+23000 w 5 03
+24000 w 5 04
+25000 w 5 05
+30000 w 5 42  # re-key channel 2 while releasing
+36000 w f8 20 5 40  # release rate 0
+36600 w 5 00
+37500 w f8 21 5 40  # release rate 1
+38100 w 5 00
+39000 w f8 22 5 40  # release rate 2
+39600 w 5 00
+40500 w f8 23 5 40  # release rate 3
+41100 w 5 00
+42000 w f8 24 5 40  # release rate 4
+42600 w 5 00
+43500 w f8 25 5 40  # release rate 5
+44100 w 5 00
+45000 w f8 26 5 40  # release rate 6
+45600 w 5 00
+46500 w f8 27 5 40  # release rate 7
+47100 w 5 00
+48000 w f8 28 5 40  # release rate 8
+48600 w 5 00
+49500 w f8 29 5 40  # release rate 9
+50100 w 5 00
+51000 w f8 2a 5 40  # release rate 10
+51600 w 5 00
+52500 w f8 2b 5 40  # release rate 11
+53100 w 5 00
+54000 w f8 2c 5 40  # release rate 12
+54600 w 5 00
+55500 w f8 2d 5 40  # release rate 13
+56100 w 5 00
+57000 w f8 2e 5 40  # release rate 14
+57600 w 5 00
+58500 w f8 2f 5 40  # release rate 15
+59100 w 5 00
