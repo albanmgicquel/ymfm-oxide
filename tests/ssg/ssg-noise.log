@@ -1,0 +1,44 @@
+chip ym2149
+clock 2000000
+samples 24000
+# Noise: every noise period 0 to 31 on channel A alone, noise with a tone
+# on each channel, and noise on all three.
+0 w 0 08 2 0f 0 09 2 00 0 0a 2 00 0 07 2 37  # noise on A only
+0 w 0 06 2 00  # noise period 0
+500 w 0 06 2 01  # noise period 1
+1000 w 0 06 2 02  # noise period 2
+1500 w 0 06 2 03  # noise period 3
+2000 w 0 06 2 04  # noise period 4
+2500 w 0 06 2 05  # noise period 5
+3000 w 0 06 2 06  # noise period 6
+3500 w 0 06 2 07  # noise period 7
+4000 w 0 06 2 08  # noise period 8
+4500 w 0 06 2 09  # noise period 9
+5000 w 0 06 2 0a  # noise period a
+5500 w 0 06 2 0b  # noise period b
+6000 w 0 06 2 0c  # noise period c
+6500 w 0 06 2 0d  # noise period d
+7000 w 0 06 2 0e  # noise period e
+7500 w 0 06 2 0f  # noise period f
+8000 w 0 06 2 10  # noise period 10
+8500 w 0 06 2 11  # noise period 11
+9000 w 0 06 2 12  # noise period 12
+9500 w 0 06 2 13  # noise period 13
+10000 w 0 06 2 14  # noise period 14
+10500 w 0 06 2 15  # noise period 15
+11000 w 0 06 2 16  # noise period 16
+11500 w 0 06 2 17  # noise period 17
+12000 w 0 06 2 18  # noise period 18
+12500 w 0 06 2 19  # noise period 19
+13000 w 0 06 2 1a  # noise period 1a
+13500 w 0 06 2 1b  # noise period 1b
+14000 w 0 06 2 1c  # noise period 1c
+14500 w 0 06 2 1d  # noise period 1d
+15000 w 0 06 2 1e  # noise period 1e
+15500 w 0 06 2 1f  # noise period 1f
+16000 w 0 06 2 e5  # noise period e5
+16500 w 0 06 2 04 0 00 2 10 0 02 2 31 0 04 2 77 0 08 2 0c 0 09 2 0b 0 0a 2 0a 0 07 2 36  # A tone and noise
+18000 w 0 07 2 2d  # B tone and noise
+19500 w 0 07 2 1b  # C tone and noise
+21000 w 0 07 2 07  # noise on all three
+22500 w 0 07 2 00 0 06 2 1f  # everything on

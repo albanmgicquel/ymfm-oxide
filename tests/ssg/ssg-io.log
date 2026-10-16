@@ -1,0 +1,92 @@
+chip ym2149
+clock 2000000
+samples 3000
+mem io ssg-io.io
+# The ports and the I/O: register 7's direction bits, writes to ports
+# A and B as outputs (external writes) and as inputs (stored only), reads
+# of each port in both directions, the read-back of every register, the
+# address's ignored high bits, and the inactive bus states; a tone keeps
+# the render from being silent.
+0 w 0 00 2 40 0 07 2 3e 0 08 2 0c
+10 w 0 0e 2 11 0 0f 2 22  # both inputs: stored only
+10 w 0 0e
+10 r 3  # port A reads the input
+10 w 0 0f
+10 r 3  # port B reads the input
+20 w 0 07 2 7e 0 0e 2 33 0 0f 2 44  # A out
+20 w 0 0e
+20 r 3  # A reads its register
+20 w 0 0f
+20 r 3  # B still reads the input
+30 w 0 07 2 be 0 0e 2 55 0 0f 2 66  # B out
+30 w 0 0e
+30 r 3
+30 w 0 0f
+30 r 3
+40 w 0 07 2 fe 0 0e 2 77 0 0f 2 88  # both out
+40 w 0 0e
+40 r 3
+40 w 0 0f
+40 r 3
+50 w 3 1e 2 99 3 3f 2 aa  # addresses 1e and 3f: ports A and B, through offset 3
+50 w 0 2e
+50 r 3
+50 r 0  # inactive
+50 r 1  # address: no read
+50 r 2  # inactive
+50 r 7  # offset 7 is 3
+60 w 0 0e 1 12 0 0e 6 bb  # offset 1 is inactive; offset 6 is 2
+60 r 3
+100 w 0 00 2 40
+100 w 0 01 2 f1
+100 w 0 02 2 9c
+100 w 0 03 2 5e
+100 w 0 04 2 77
+100 w 0 05 2 af
+100 w 0 06 2 e5
+100 w 0 07 2 fe
+100 w 0 08 2 3c
+100 w 0 09 2 ec
+100 w 0 0a 2 1b
+100 w 0 0b 2 d4
+100 w 0 0c 2 8f
+100 w 0 0d 2 08
+100 w 0 0e 2 c5
+100 w 0 0f 2 3a
+100 w 0 00
+100 r 3  # register 0
+100 w 0 11
+100 r 3  # register 1
+100 w 0 22
+100 r 3  # register 2
+100 w 0 33
+100 r 3  # register 3
+100 w 0 04
+100 r 3  # register 4
+100 w 0 15
+100 r 3  # register 5
+100 w 0 26
+100 r 3  # register 6
+100 w 0 37
+100 r 3  # register 7
+100 w 0 08
+100 r 3  # register 8
+100 w 0 19
+100 r 3  # register 9
+100 w 0 2a
+100 r 3  # register a
+100 w 0 3b
+100 r 3  # register b
+100 w 0 0c
+100 r 3  # register c
+100 w 0 1d
+100 r 3  # register d
+100 w 0 2e
+100 r 3  # register e
+100 w 0 3f
+100 r 3  # register f
+200 w 0 07 2 3e 0 0e 2 cc  # back to inputs
+200 w 0 0e
+200 r 3
+200 w 0 0f
+200 r 3
