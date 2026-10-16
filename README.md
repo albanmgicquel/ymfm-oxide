@@ -20,14 +20,20 @@ or its author.
 |---|---|---|
 | `ymfm` | `ymfm.h` | the host interface, outputs, DAC helpers |
 | `fm` (private) | `ymfm_fm.h`, `ymfm_fm.ipp` | the generic FM engine |
-| `opl` | `ymfm_opl.h`, `ymfm_opl.cpp` | YM3526 (OPL), YM3812 (OPL2), YMF262 (OPL3) |
+| `ssg` | `ymfm_ssg.h`, `ymfm_ssg.cpp` | the SSG engine, with its override hook |
+| `adpcm` | `ymfm_adpcm.h`, `ymfm_adpcm.cpp` | the ADPCM-A and ADPCM-B engines |
+| `pcm` | `ymfm_pcm.h`, `ymfm_pcm.cpp` | the OPL4's PCM wavetable engine |
+| `misc` | `ymfm_misc.h`, `ymfm_misc.cpp` | YM2149 (SSG) |
+| `opl` | `ymfm_opl.h`, `ymfm_opl.cpp` | YM3526 (OPL), Y8950 (MSX-Audio), YM3812 (OPL2), YMF262 (OPL3), YMF289B (OPL3L), YMF278B (OPL4), YM2413 (OPLL), YM2423 (OPLL-X), YMF281 (OPLLP), DS1001 (Konami VRC7) |
 | `opm` | `ymfm_opm.h`, `ymfm_opm.cpp` | YM2151 (OPM), YM2164 (OPP) |
+| `opn` | `ymfm_opn.h`, `ymfm_opn.cpp` | YM2612 (OPN2), YM3438 (OPN2C), YMF276 (OPN2L) |
+| `opq` | `ymfm_opq.h`, `ymfm_opq.cpp` | YM3806 (OPQ), YM3533 |
+| `opz` | `ymfm_opz.h`, `ymfm_opz.cpp` | YM2414 (OPZ) |
 
-Still to come, each in the module of its upstream file: the OPN family
-(`opn`: YM2203, YM2608, YMF288, YM2610, YM2610B, YM2612, YM3438, YMF276) with
-`ssg` and `adpcm`; the OPZ (`opz`: YM2414); the OPQ (`opq`: YM3806, YM3533);
-the YM2149 (`misc`); and the rest of `opl`: the Y8950, the YMF289B, the
-YMF278B with `pcm`, and the OPLL family (YM2413, YM2423, YMF281, DS1001).
+Still to come, in `opn`: the chips that combine the FM engine with the SSG
+and ADPCM, the YM2203 (OPN), YM2608 (OPNA), YMF288 (OPN3L), YM2610 (OPNB)
+and YM2610B (OPNB2), with the fidelity setting and the SSG resampler they
+share.
 
 Everything a chip does is ported, not only its sound: the status register,
 busy time, both timers, the IRQ line, CSM, and external I/O. Save states
@@ -70,10 +76,16 @@ The output is held to the original sample for sample, together with the
 IRQ line after every sample, every status read, and every external write.
 
 - **Golden renders.** `tests/<family>/` holds synthetic register logs, each
-  with a golden render made by the original C++ (14 + 3 for the OPL, 13 for
-  the OPM). `cargo test` replays every log and compares everything; a
-  mismatch reports the first difference, the commands that led to it and
-  the register file at that point.
+  with a golden render made by the original C++: 17 for the OPL, 12 for the
+  OPLL, 1 for the YMF289B, 8 for the Y8950 and 4 for the ADPCM engines
+  alone, 12 for the OPL4, 13 for the OPM, 16 for the OPN, 14 for the OPQ,
+  16 for the OPZ and 5 for the SSG. `cargo test` replays every log and
+  compares everything; a mismatch reports the first difference, the
+  commands that led to it and the register file at that point. Memory
+  images are synthetic too: the tests build them (ADPCM by encoding sines,
+  ramps and noise, the OPL4 wavetable from generated waves) and check the
+  committed files against what they build, so no sample data comes from
+  anywhere else.
 - **Randomized differential tests.** With an oracle built, each chip's test
   also writes random logs, renders each through both, and compares.
 
@@ -103,6 +115,23 @@ YMFM_ORACLE=$PWD/oracle/oracle YMFM_CASES=200 cargo test
 `YMFM_SEED` sets the first seed (1 by default). Without `YMFM_ORACLE` those
 tests return at once. Failing logs are kept in a temporary directory so a
 seed can be replayed; `YMFM_KEEP` keeps every log.
+
+The ADPCM engines also have an oracle of their own, `tests/adpcm/engines.cpp`,
+which drives upstream's ADPCM-A and ADPCM-B engines outside any chip (ADPCM-B
+with the fixed address shift, right pan, limit register and read path the
+Y8950 does not expose). It renders the `engine-*` goldens, and with
+`YMFM_ENGINE_ORACLE` naming it the engines' randomized tests run too:
+
+```sh
+c++ -std=c++17 -O2 -I"$YMFM/src" tests/adpcm/engines.cpp \
+    "$YMFM"/src/ymfm_adpcm.cpp -o oracle/engines
+YMFM_ENGINE_ORACLE=$PWD/oracle/engines cargo test --test adpcm
+```
+
+`YMFM_WRITE_IMAGES` rewrites the synthetic ADPCM images in `tests/adpcm`,
+and `YMFM_PCM_WRITE_IMAGE` the OPL4 wavetable `tests/pcm/wavetable.bin`,
+from the generators in the tests; without them the tests only check that
+the committed images are the generated ones.
 
 A log is text: a header (`chip ym2151`, `clock 3579545`, `samples 30000`,
 and `mem <class> <file>` for an external memory image), then commands led by

@@ -356,7 +356,6 @@ pub(crate) fn opm_key_code_to_phase_step(block_freq: u32, delta: i32) -> u32 {
 /// Returns the signed PM adjustment to the frequency for the 7 most
 /// significant frequency number bits, a 3-bit PM depth and a signed 5-bit raw
 /// PM value, written to match Nuked's behaviour. This serves the OPN family.
-#[allow(dead_code)] // the OPN family is not ported yet
 pub(crate) fn opn_lfo_pm_phase_adjustment(
     fnum_bits: u32,
     pm_sensitivity: u32,
@@ -1665,7 +1664,7 @@ impl<R: FmRegisters, I: Interface> FmEngine<R, I> {
     }
 
     /// Sets the IRQ mask.
-    #[allow(dead_code)] // used by the OPN family, which is not ported yet
+    #[allow(dead_code)] // only the YM2608 and YM2610 family call it, and they are not ported yet
     pub(crate) fn set_irq_mask(&mut self, mask: u8) {
         self.irq_mask = mask;
         self.intf.sync_check_interrupts();
@@ -1678,7 +1677,7 @@ impl<R: FmRegisters, I: Interface> FmEngine<R, I> {
     }
 
     /// Sets the prescale factor (2/3/6).
-    #[allow(dead_code)] // used by the OPN family, which is not ported yet
+    #[allow(dead_code)] // only the YM2203 and YM2608 call it, and they are not ported yet
     pub(crate) fn set_clock_prescale(&mut self, prescale: u32) {
         self.clock_prescale = prescale as u8;
     }
@@ -1704,7 +1703,6 @@ impl<R: FmRegisters, I: Interface> FmEngine<R, I> {
     }
 
     /// Returns the register set, mutably.
-    #[allow(dead_code)] // used by the OPN family, which is not ported yet
     pub(crate) fn regs_mut(&mut self) -> &mut R {
         &mut self.regs
     }

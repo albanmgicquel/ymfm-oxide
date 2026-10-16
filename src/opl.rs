@@ -3,12 +3,18 @@
 // register class template over the revision is a const generic; its waveform
 // tables are computed once at compile time and shared rather than held per
 // chip; a register write returns its key-on target rather than writing
-// through output parameters; key-on logging and save states are gone; a new
-// chip is reset, where ymfm leaves its register file undefined until
-// `reset()`; and a chip owns its interface. So far it covers the YM3526
-// (OPL), the YM3812 (OPL2) and the YMF262 (OPL3); the Y8950, the YMF289B,
-// the YMF278B and the OPLL family are still to come. Every computation that
-// reaches a sample, a status bit or a timer is kept as ymfm writes it.
+// through output parameters; the OPLL register set's instrument pointers
+// (per channel and per operator, into either the register file or the
+// instrument set) are indices into one array holding the registers then the
+// instruments; the OPLL variants, which ymfm derives from `ym2413`, are
+// newtypes over a shared `OpllBase`; the Y8950's ADPCM-B and the YMF278B's
+// PCM engine take the interface as an argument rather than holding it, the
+// chip owning it; key-on logging and save states are gone; a new chip is
+// reset, where ymfm leaves its register file undefined until `reset()`; and a
+// chip owns its interface. It covers the YM3526 (OPL), Y8950 (MSX-AUDIO),
+// YM3812 (OPL2), YMF262 (OPL3), YMF289B (OPL3L), YMF278B (OPL4), and the OPLL
+// family: YM2413, YM2423, YMF281 and DS1001. Every computation that reaches
+// a sample, a status bit or a timer is kept as ymfm writes it.
 //
 // The original carries this notice, which applies to this translation:
 //
@@ -42,9 +48,13 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-//! The OPL family: the YM3526 (OPL), YM3812 (OPL2) and YMF262 (OPL3).
+//! The OPL family: the YM3526 (OPL), the Y8950 (MSX-AUDIO, the OPL with
+//! ADPCM-B), the YM3812 (OPL2), the YMF262 (OPL3), the YMF289B (OPL3L), the
+//! YMF278B (OPL4, the OPL3 with a PCM wavetable engine), and the OPLL
+//! family: the YM2413 (OPLL), YM2423 (OPLL-X), YMF281 (OPLLP) and DS1001
+//! (Konami VRC7), which differ only in their built-in instrument sets.
 //!
-//! The register map, as ymfm documents it:
+//! The OPL register map, as ymfm documents it:
 //!
 //! ```text
 //! System-wide registers:
@@ -106,14 +116,60 @@
 //!   E0-F5 ------xx Wave select (0-3) [OPL2 only]
 //!         -----xxx Wave select (0-7) [OPL3+ only]
 //! ```
+//!
+//! The OPLL register map, as ymfm documents it:
+//!
+//! ```text
+//! System-wide registers:
+//!       0E --x----- Rhythm enable
+//!          ---x---- Bass drum key on
+//!          ----x--- Snare drum key on
+//!          -----x-- Tom key on
+//!          ------x- Top cymbal key on
+//!          -------x High hat key on
+//!       0F xxxxxxxx Test register
+//!
+//! Per-channel registers (channel in address bits 0-3)
+//!    10-18 xxxxxxxx F-number (low 8 bits)
+//!    20-28 --x----- Sustain on
+//!          ---x---- Key on
+//!          --- xxx- Block (octvate, 0-7)
+//!          -------x F-number (high bit)
+//!    30-38 xxxx---- Instrument selection
+//!          ----xxxx Volume
+//!
+//! User instrument registers (for carrier, modulator operators)
+//!    00-01 x------- AM enable
+//!          -x------ PM enable (VIB)
+//!          --x----- EG type
+//!          ---x---- Key scale rate
+//!          ----xxxx Multiple value (0-15)
+//!       02 xx------ Key scale level (carrier, 0-3)
+//!          --xxxxxx Total level (modulator, 0-63)
+//!       03 xx------ Key scale level (modulator, 0-3)
+//!          ---x---- Rectified wave (carrier)
+//!          ----x--- Rectified wave (modulator)
+//!          -----xxx Feedback level for operator 1 (0-7)
+//!    04-05 xxxx---- Attack rate (0-15)
+//!          ----xxxx Decay rate (0-15)
+//!    06-07 xxxx---- Sustain level (0-15)
+//!          ----xxxx Release rate (0-15)
+//!
+//! Internal (fake) registers:
+//!    40-48 xxxxxxxx Current instrument base address
+//!    4E-5F xxxxxxxx Current instrument base address + operator slot (0/1)
+//!    70-FF xxxxxxxx Data for instruments (1-16 plus 3 drums)
+//! ```
 
+use crate::adpcm::AdpcmBEngine;
 use crate::fm::{
     abs_sin_attenuation, effective_rate, operator_list, FmEngine, FmRegisters, OpdataCache,
     MAX_CHANNELS, RHYTHM_CHANNEL, WAVEFORM_LENGTH,
 };
+use crate::pcm::PcmEngine;
 use crate::ymfm::{
-    bitfield, Interface, NullInterface, Output, EG_ATTACK, EG_DECAY, EG_DEPRESS, EG_RELEASE,
-    EG_SUSTAIN,
+    bitfield, AccessClass, Interface, NullInterface, Output, EG_ATTACK, EG_DECAY, EG_DEPRESS,
+    EG_RELEASE, EG_SUSTAIN,
 };
 
 /// Converts an OPL concatenated block (3 bits) and the top four bits of the
@@ -268,7 +324,6 @@ impl<const REVISION: u32> OplRegisters<REVISION> {
             0
         }
     }
-    #[allow(dead_code)] // used by the OPL4, which is not ported yet
     pub(crate) fn new2flag(&self) -> u32 {
         if Self::IS_OPL4_PLUS {
             self.byte(0x105, 1, 1, 0)
@@ -759,48 +814,6 @@ pub(crate) type Opl3Registers = OplRegisters<3>;
 //*********************************************************
 //  OPLL REGISTERS
 //*********************************************************
-
-// The OPLL register map, as ymfm documents it:
-//
-//      System-wide registers:
-//           0E --x----- Rhythm enable
-//              ---x---- Bass drum key on
-//              ----x--- Snare drum key on
-//              -----x-- Tom key on
-//              ------x- Top cymbal key on
-//              -------x High hat key on
-//           0F xxxxxxxx Test register
-//
-//     Per-channel registers (channel in address bits 0-3)
-//        10-18 xxxxxxxx F-number (low 8 bits)
-//        20-28 --x----- Sustain on
-//              ---x---- Key on
-//              --- xxx- Block (octvate, 0-7)
-//              -------x F-number (high bit)
-//        30-38 xxxx---- Instrument selection
-//              ----xxxx Volume
-//
-//     User instrument registers (for carrier, modulator operators)
-//        00-01 x------- AM enable
-//              -x------ PM enable (VIB)
-//              --x----- EG type
-//              ---x---- Key scale rate
-//              ----xxxx Multiple value (0-15)
-//           02 xx------ Key scale level (carrier, 0-3)
-//              --xxxxxx Total level (modulator, 0-63)
-//           03 xx------ Key scale level (modulator, 0-3)
-//              ---x---- Rectified wave (carrier)
-//              ----x--- Rectified wave (modulator)
-//              -----xxx Feedback level for operator 1 (0-7)
-//        04-05 xxxx---- Attack rate (0-15)
-//              ----xxxx Decay rate (0-15)
-//        06-07 xxxx---- Sustain level (0-15)
-//              ----xxxx Release rate (0-15)
-//
-//     Internal (fake) registers:
-//        40-48 xxxxxxxx Current instrument base address
-//        4E-5F xxxxxxxx Current instrument base address + operator slot (0/1)
-//        70-FF xxxxxxxx Data for instruments (1-16 plus 3 drums)
 
 /// The size of an OPLL instrument set: fifteen melodic instruments and the
 /// three rhythm ones, eight bytes each.
@@ -1388,9 +1401,6 @@ impl<I: Interface> Ym3526<I> {
 //*********************************************************
 //  Y8950
 //*********************************************************
-
-use crate::adpcm::AdpcmBEngine;
-use crate::ymfm::AccessClass;
 
 /// The Yamaha Y8950 (MSX-AUDIO): the OPL's nine 2-operator channels with an
 /// ADPCM-B channel beside them, a keyboard port and four I/O lines, and one
@@ -2100,15 +2110,13 @@ impl<I: Interface> Ymf289b<I> {
 //  YMF278B
 //*********************************************************
 
-use crate::pcm::PcmEngine;
-
 /// The OPL4 register set: the OPL3's, with the NEW2 bit and a prescale of
 /// 19.
 pub(crate) type Opl4Registers = OplRegisters<4>;
 
 /// The Yamaha YMF278B (OPL4): the OPL3's FM side beside a 24-channel PCM
 /// wavetable engine that plays samples from external memory (the
-/// [`AccessClass::Pcm`](crate::AccessClass::Pcm) class of the interface), and
+/// [`AccessClass::Pcm`] class of the interface), and
 /// six outputs: FM outputs C and D (DO0), PCM outputs C and D (DO1), and the
 /// mix of FM and PCM outputs A and B, left and right (DO2).
 ///

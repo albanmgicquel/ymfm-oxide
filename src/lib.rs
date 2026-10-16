@@ -14,13 +14,19 @@
 //!
 //! Ported so far:
 //!
-//! | Module  | Chips                                      |
-//! |---------|--------------------------------------------|
-//! | [`opl`] | YM3526 (OPL), YM3812 (OPL2), YMF262 (OPL3) |
-//! | [`opm`] | YM2151 (OPM), YM2164 (OPP)                 |
+//! | Module    | Chips |
+//! |-----------|-------|
+//! | [`misc`]  | YM2149 (SSG) |
+//! | [`opl`]   | YM3526 (OPL), Y8950 (MSX-Audio), YM3812 (OPL2), YMF262 (OPL3), YMF289B (OPL3L), YMF278B (OPL4), YM2413 (OPLL), YM2423 (OPLL-X), YMF281 (OPLLP), DS1001 (Konami VRC7) |
+//! | [`opm`]   | YM2151 (OPM), YM2164 (OPP) |
+//! | [`opn`]   | YM2612 (OPN2), YM3438 (OPN2C), YMF276 (OPN2L) |
+//! | [`opq`]   | YM3806 (OPQ), YM3533 |
+//! | [`opz`]   | YM2414 (OPZ) |
 //!
-//! [`opn`], [`opq`], [`opz`], [`ssg`], [`adpcm`], [`pcm`] and [`misc`] are
-//! reserved for the rest of the family and are empty for now.
+//! [`ssg`], [`adpcm`] and [`pcm`] hold the engines the chips share beside
+//! their FM engine: the SSG, ADPCM-A and ADPCM-B, and the OPL4's wavetable.
+//! The rest of [`opn`], the YM2203, YM2608, YMF288, YM2610 and YM2610B, is
+//! still to come.
 //!
 //! A chip is a plain value: it is created with an [`Interface`], written
 //! through its ports as the hardware is, and pulled one sample at a time at
