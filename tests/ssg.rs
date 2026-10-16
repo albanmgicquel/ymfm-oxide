@@ -19,48 +19,70 @@ mod common;
 
 use std::fmt::Write as _;
 
-use common::{Host, Random};
+use common::{Host, Random, Recorder};
 use ymfm_oxide::misc::Ym2149;
 use ymfm_oxide::ssg::{SsgEngine, SsgOverride};
 use ymfm_oxide::{NullInterface, Output};
 
 // The YM2149 has no timers, so it cannot take `harness_chip!`, whose chips
 // all report timer expiries.
-impl common::Chip for Ym2149<Host> {
-    const OUTPUTS: usize = 3;
-    fn create(host: Host) -> Self {
-        Ym2149::new(host)
-    }
-    fn reset(&mut self) {
-        Ym2149::reset(self)
-    }
-    fn write(&mut self, offset: u32, data: u8) {
-        Ym2149::write(self, offset, data)
-    }
-    fn read(&mut self, offset: u32) -> u8 {
-        Ym2149::read(self, offset)
-    }
-    fn generate(&mut self, output: &mut [i32]) {
-        let mut out = [Output::<3>::default()];
-        Ym2149::generate(self, &mut out);
-        output.copy_from_slice(&out[0].data);
-    }
-    fn sample_rate(&self, clock: u32) -> u32 {
-        Ym2149::sample_rate(self, clock)
-    }
-    fn timer_expired(&mut self, _tnum: u32) {
-        unreachable!("the YM2149 sets no timers");
-    }
-    fn host(&mut self) -> &mut Host {
-        self.intf_mut()
-    }
-    fn registers(&self) -> &[u8] {
-        Ym2149::registers(self)
-    }
+macro_rules! ym2149_harness {
+    ($chip:ty, $override:expr, $create:expr) => {
+        impl common::Chip for $chip {
+            const OUTPUTS: usize = 3;
+            const SSG_OVERRIDE: bool = $override;
+            fn create(host: Host) -> Self {
+                $create(host)
+            }
+            fn reset(&mut self) {
+                <$chip>::reset(self)
+            }
+            fn write(&mut self, offset: u32, data: u8) {
+                <$chip>::write(self, offset, data)
+            }
+            fn read(&mut self, offset: u32) -> u8 {
+                <$chip>::read(self, offset)
+            }
+            fn generate(&mut self, output: &mut [i32]) {
+                let mut out = [Output::<3>::default()];
+                <$chip>::generate(self, &mut out);
+                output.copy_from_slice(&out[0].data);
+            }
+            fn sample_rate(&self, clock: u32) -> u32 {
+                <$chip>::sample_rate(self, clock)
+            }
+            fn timer_expired(&mut self, _tnum: u32) {
+                unreachable!("the YM2149 sets no timers");
+            }
+            fn host(&mut self) -> &mut Host {
+                self.intf_mut()
+            }
+            fn registers(&self) -> &[u8] {
+                <$chip>::registers(self)
+            }
+        }
+    };
 }
+
+ym2149_harness!(Ym2149<Host>, false, Ym2149::new);
+ym2149_harness!(
+    Ym2149<Host, Recorder>,
+    true,
+    |mut host: Host| {
+        let recorder = Recorder::new(&mut host);
+        Ym2149::with_ssg_override(host, recorder)
+    }
+);
 
 fn check(name: &str) {
     common::check::<Ym2149<Host>>("ssg", name);
+}
+
+#[test]
+fn matches_ymfm_with_an_override_in_place_of_the_ssg() {
+    // the override takes every reset, read and write, and the engine,
+    // never written, stays silent
+    common::check_render::<Ym2149<Host, Recorder>>("ssg", "ssg-override", false);
 }
 
 #[test]
@@ -97,14 +119,14 @@ fn runs_at_a_sixty_fourth_of_its_clock() {
 
 /// An override that records what reaches it and answers reads itself.
 #[derive(Default)]
-struct Recorder {
+struct Counter {
     resets: u32,
     prescales: u32,
     writes: Vec<(u32, u8)>,
     reads: Vec<u32>,
 }
 
-impl SsgOverride for Recorder {
+impl SsgOverride for Counter {
     fn ssg_reset(&mut self) {
         self.resets += 1;
     }
@@ -122,7 +144,7 @@ impl SsgOverride for Recorder {
 
 #[test]
 fn an_override_takes_resets_reads_and_writes() {
-    let mut recorder = Recorder::default();
+    let mut recorder = Counter::default();
     {
         let mut chip = Ym2149::with_ssg_override(NullInterface, &mut recorder);
         assert!(chip.ssg().overridden());
@@ -139,13 +161,13 @@ fn an_override_takes_resets_reads_and_writes() {
     assert_eq!(recorder.resets, 2);
 
     let mut chip =
-        Ym2149::<NullInterface, Recorder>::with_ssg_override(NullInterface, Recorder::default());
-    chip.ssg_override(Recorder::default());
+        Ym2149::<NullInterface, Counter>::with_ssg_override(NullInterface, Counter::default());
+    chip.ssg_override(Counter::default());
     assert_eq!(chip.ssg().ssg_override().unwrap().resets, 0);
 
-    let mut engine = SsgEngine::<Recorder>::new();
+    let mut engine = SsgEngine::<Counter>::new();
     engine.prescale_changed();
-    engine.set_override(Recorder::default());
+    engine.set_override(Counter::default());
     engine.prescale_changed();
     engine.write(&mut NullInterface, 7, 0xff);
     assert_eq!(engine.regs().read(7), 0);
@@ -221,4 +243,17 @@ fn random_log(seed: u64, samples: u32) -> String {
 #[test]
 fn matches_ymfm_on_random_ym2149_logs_when_an_oracle_is_named() {
     common::differential::<Ym2149<Host>>("ym2149", |seed| random_log(seed, 20_000));
+}
+
+#[test]
+fn matches_ymfm_on_random_ym2149_logs_with_an_override_when_an_oracle_is_named() {
+    common::differential::<Ym2149<Host, Recorder>>("ym2149-override", |seed| {
+        // the override takes the ports, so the log needs no I/O image
+        random_log(seed, 5_000)
+            .lines()
+            .filter(|line| !line.starts_with("mem "))
+            .collect::<Vec<_>>()
+            .join("\n")
+            .replacen("samples", "ssg-override\nsamples", 1)
+    });
 }

@@ -404,7 +404,7 @@ fn resets_to_the_state_a_new_chip_starts_in() {
         .iter()
         .flat_map(|command| match &command.action {
             common::Action::Write(pairs) => pairs.clone(),
-            common::Action::Read(_) => Vec::new(),
+            _ => Vec::new(),
         })
         .collect();
     let mut host = Host::new();

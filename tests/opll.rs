@@ -108,7 +108,7 @@ fn writes_of(name: &str) -> Vec<(u32, u8)> {
         .iter()
         .flat_map(|command| match &command.action {
             common::Action::Write(pairs) => pairs.clone(),
-            common::Action::Read(_) => Vec::new(),
+            _ => Vec::new(),
         })
         .collect()
 }

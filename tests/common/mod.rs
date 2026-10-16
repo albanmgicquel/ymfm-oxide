@@ -11,9 +11,14 @@
 
 #![allow(dead_code)]
 
+use std::cell::RefCell;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
+use ymfm_oxide::ssg::SsgOverride;
+
+pub mod synth;
 use ymfm_oxide::{AccessClass, Interface};
 
 /// A time that never comes.
@@ -26,9 +31,11 @@ const MEMORY_LIMIT: u32 = 1 << 24;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Event {
     pub sample: u32,
-    /// `b'r'` for a read, `b'x'` for an external write.
+    /// `b'r'` for a read, `b'x'` for an external write, `b'o'` for a call
+    /// of the SSG override.
     pub kind: u8,
-    /// The access class, or 0xff for a read.
+    /// The access class, 0xff for a read, or the override call (0 reset,
+    /// 1 read, 2 write, 3 prescale changed).
     pub access: u8,
     /// The address, or the offset for a read.
     pub address: u32,
@@ -42,6 +49,15 @@ impl std::fmt::Display for Event {
                 f,
                 "read of offset {:x} at sample {} gave {:02x}",
                 self.address, self.sample, self.value
+            )
+        } else if self.kind == b'o' {
+            let call = ["reset", "read", "write", "prescale change"]
+                .get(self.access as usize)
+                .unwrap_or(&"unknown call");
+            write!(
+                f,
+                "override {call} of register {:x} with {:02x} at sample {}",
+                self.address, self.value, self.sample
             )
         } else {
             write!(
@@ -63,6 +79,9 @@ pub struct Host {
     pub sample: u32,
     pub memory: [Vec<u8>; 4],
     pub events: Vec<Event>,
+    /// The calls a `Recorder` override has seen and not yet moved to
+    /// `events`, as (call, register, value).
+    pub ssg_log: Option<OverrideLog>,
 }
 
 impl Host {
@@ -75,6 +94,24 @@ impl Host {
             sample: 0,
             memory: Default::default(),
             events: Vec::new(),
+            ssg_log: None,
+        }
+    }
+
+    /// Moves the override's calls since the last drain into the events, at
+    /// the current sample. The harness drains after every call into the
+    /// chip, so the calls keep their order with the chip's other events.
+    pub fn drain(&mut self) {
+        if let Some(log) = &self.ssg_log {
+            for (call, regnum, value) in log.borrow_mut().drain(..) {
+                self.events.push(Event {
+                    sample: self.sample,
+                    kind: b'o',
+                    access: call,
+                    address: regnum,
+                    value,
+                });
+            }
         }
     }
 
@@ -142,6 +179,47 @@ impl Interface for Host {
     }
 }
 
+/// The calls an override records, as (call, register, value), shared
+/// between the override and its host.
+pub type OverrideLog = Rc<RefCell<Vec<(u8, u32, u8)>>>;
+
+/// The oracle's recording SSG override: it keeps its own 16 registers,
+/// clears them on a reset, stores writes and answers a read with the
+/// register XOR 0xA5, and records every call in its host's `ssg_log`.
+#[derive(Clone, Debug)]
+pub struct Recorder {
+    regs: [u8; 16],
+    log: OverrideLog,
+}
+
+impl Recorder {
+    /// Creates a recorder that records into `host`.
+    pub fn new(host: &mut Host) -> Recorder {
+        let log = Rc::new(RefCell::new(Vec::new()));
+        host.ssg_log = Some(log.clone());
+        Recorder { regs: [0; 16], log }
+    }
+}
+
+impl SsgOverride for Recorder {
+    fn ssg_reset(&mut self) {
+        self.regs = [0; 16];
+        self.log.borrow_mut().push((0, 0, 0));
+    }
+    fn ssg_read(&mut self, regnum: u32) -> u8 {
+        let value = self.regs[(regnum & 0x0f) as usize] ^ 0xa5;
+        self.log.borrow_mut().push((1, regnum, value));
+        value
+    }
+    fn ssg_write(&mut self, regnum: u32, data: u8) {
+        self.regs[(regnum & 0x0f) as usize] = data;
+        self.log.borrow_mut().push((2, regnum, data));
+    }
+    fn ssg_prescale_changed(&mut self) {
+        self.log.borrow_mut().push((3, 0, 0));
+    }
+}
+
 /// A chip the harness can drive, over a `Host`.
 pub trait Chip {
     /// The number of outputs.
@@ -156,16 +234,68 @@ pub trait Chip {
     fn timer_expired(&mut self, tnum: u32);
     fn host(&mut self) -> &mut Host;
     fn registers(&self) -> &[u8];
+    /// Whether `create` installs a `Recorder` as the SSG override.
+    const SSG_OVERRIDE: bool = false;
+    /// Sets the fidelity: 0 the maximum, 1 the minimum, 2 the medium.
+    fn set_fidelity(&mut self, _fidelity: u8) {
+        panic!("the chip has no fidelity setting");
+    }
 }
 
-/// Implements `Chip` for one of the crate's chips over `Host`.
+/// Implements `Chip` for one of the crate's chips over `Host`: plain, or
+/// with `fidelity` for a chip with an `OpnFidelity`, and with `override`
+/// for one whose SSG override is a `Recorder` (`fidelity override` for
+/// both).
 macro_rules! harness_chip {
     ($chip:ty, $outputs:expr) => {
-        impl crate::common::Chip for $chip {
-            const OUTPUTS: usize = $outputs;
+        harness_chip!(@impl $chip, $outputs, false, {
             fn create(host: crate::common::Host) -> Self {
                 <$chip>::new(host)
             }
+        });
+    };
+    ($chip:ty, $outputs:expr, fidelity) => {
+        harness_chip!(@impl $chip, $outputs, false, {
+            fn create(host: crate::common::Host) -> Self {
+                <$chip>::new(host)
+            }
+            harness_chip!(@fidelity $chip);
+        });
+    };
+    ($chip:ty, $outputs:expr, override) => {
+        harness_chip!(@impl $chip, $outputs, true, {
+            harness_chip!(@override $chip);
+        });
+    };
+    ($chip:ty, $outputs:expr, fidelity override) => {
+        harness_chip!(@impl $chip, $outputs, true, {
+            harness_chip!(@override $chip);
+            harness_chip!(@fidelity $chip);
+        });
+    };
+    (@override $chip:ty) => {
+        fn create(mut host: crate::common::Host) -> Self {
+            let recorder = crate::common::Recorder::new(&mut host);
+            <$chip>::with_ssg_override(host, recorder)
+        }
+    };
+    (@fidelity $chip:ty) => {
+        fn set_fidelity(&mut self, fidelity: u8) {
+            <$chip>::set_fidelity(
+                self,
+                match fidelity {
+                    0 => ymfm_oxide::opn::OpnFidelity::Max,
+                    1 => ymfm_oxide::opn::OpnFidelity::Min,
+                    _ => ymfm_oxide::opn::OpnFidelity::Med,
+                },
+            )
+        }
+    };
+    (@impl $chip:ty, $outputs:expr, $override:expr, { $($extra:tt)* }) => {
+        impl crate::common::Chip for $chip {
+            const OUTPUTS: usize = $outputs;
+            const SSG_OVERRIDE: bool = $override;
+            $($extra)*
             fn reset(&mut self) {
                 <$chip>::reset(self)
             }
@@ -203,6 +333,8 @@ pub enum Action {
     Write(Vec<(u32, u8)>),
     /// read(offset), recorded.
     Read(u32),
+    /// set_fidelity: 0 the maximum, 1 the minimum, 2 the medium.
+    Fidelity(u8),
 }
 
 #[derive(Clone, Debug)]
@@ -223,8 +355,19 @@ impl std::fmt::Display for Command {
                 Ok(())
             }
             Action::Read(offset) => write!(f, " r {offset:x}"),
+            Action::Fidelity(fidelity) => write!(f, " f {}", FIDELITIES[*fidelity as usize]),
         }
     }
+}
+
+/// The fidelities' names in a log, in the order of their numbers.
+const FIDELITIES: [&str; 3] = ["max", "min", "med"];
+
+fn fidelity(name: &str) -> u8 {
+    FIDELITIES
+        .iter()
+        .position(|known| *known == name)
+        .unwrap_or_else(|| panic!("unknown fidelity {name}")) as u8
 }
 
 /// A chip-tagged register log.
@@ -234,6 +377,10 @@ pub struct Log {
     pub clock: u32,
     pub samples: u32,
     pub memory: Vec<(AccessClass, Vec<u8>)>,
+    /// The fidelity to set before the reset, if any.
+    pub fidelity: Option<u8>,
+    /// Whether the SSG override is installed.
+    pub ssg_override: bool,
     pub commands: Vec<Command>,
 }
 
@@ -254,6 +401,8 @@ pub fn parse(text: &str, directory: &Path) -> Log {
         clock: 0,
         samples: 0,
         memory: Vec::new(),
+        fidelity: None,
+        ssg_override: false,
         commands: Vec::new(),
     };
     let mut last = 0;
@@ -267,6 +416,8 @@ pub fn parse(text: &str, directory: &Path) -> Log {
             ("chip", 2) => log.chip = words[1].to_string(),
             ("clock", 2) => log.clock = words[1].parse().expect("a clock"),
             ("samples", 2) => log.samples = words[1].parse().expect("a sample count"),
+            ("fidelity", 2) => log.fidelity = Some(fidelity(words[1])),
+            ("ssg-override", 1) => log.ssg_override = true,
             ("mem", 3) => {
                 let path = directory.join(words[2]);
                 let image = std::fs::read(&path)
@@ -286,6 +437,7 @@ pub fn parse(text: &str, directory: &Path) -> Log {
                             .collect(),
                     ),
                     ("r", 3) => Action::Read(hex(words[2])),
+                    ("f", 3) => Action::Fidelity(fidelity(words[2])),
                     _ => panic!("cannot read the command: {line}"),
                 };
                 log.commands.push(Command { sample, action });
@@ -412,8 +564,21 @@ pub fn compare<C: Chip>(log: &Log, expected: &Render) -> Result<(), String> {
     for (access, image) in &log.memory {
         host.memory[*access as usize] = image.clone();
     }
+    assert_eq!(
+        log.ssg_override,
+        C::SSG_OVERRIDE,
+        "the log and the harness disagree on the SSG override"
+    );
+    // as the oracle: the chip as made (an override installed with the
+    // default fidelity, then a reset), the log's fidelity, and a reset
     let mut chip = C::create(host);
+    chip.host().drain();
+    if let Some(fidelity) = log.fidelity {
+        chip.set_fidelity(fidelity);
+        chip.host().drain();
+    }
     chip.reset();
+    chip.host().drain();
     let mut next = 0;
     let mut checked_events = 0;
     let mut output = vec![0i32; outputs];
@@ -425,6 +590,7 @@ pub fn compare<C: Chip>(log: &Log, expected: &Render) -> Result<(), String> {
             host.now = host.deadline[which];
             host.deadline[which] = NEVER;
             chip.timer_expired(which as u32);
+            chip.host().drain();
             chip.host().now = saved;
         }
         while next < log.commands.len() && log.commands[next].sample <= sample {
@@ -432,10 +598,16 @@ pub fn compare<C: Chip>(log: &Log, expected: &Render) -> Result<(), String> {
                 Action::Write(pairs) => {
                     for (offset, data) in pairs {
                         chip.write(*offset, *data);
+                        chip.host().drain();
                     }
+                }
+                Action::Fidelity(fidelity) => {
+                    chip.set_fidelity(*fidelity);
+                    chip.host().drain();
                 }
                 Action::Read(offset) => {
                     let value = chip.read(*offset);
+                    chip.host().drain();
                     chip.host().events.push(Event {
                         sample,
                         kind: b'r',
@@ -448,6 +620,7 @@ pub fn compare<C: Chip>(log: &Log, expected: &Render) -> Result<(), String> {
             next += 1;
         }
         chip.generate(&mut output);
+        chip.host().drain();
 
         let base = sample as usize * outputs;
         for (index, value) in output.iter().enumerate() {
@@ -516,18 +689,32 @@ pub fn read_log(family: &str, name: &str) -> Log {
 }
 
 /// Replays the log `name` of a family through `C` and holds it to its
-/// golden render.
+/// golden render, which must not be silent.
 pub fn check<C: Chip>(family: &str, name: &str) {
+    check_render::<C>(family, name, true);
+}
+
+/// Replays the log `name` of a family through `C` and holds it to its
+/// golden render; with `audible`, a golden of silence fails, since it would
+/// pass a chip that renders nothing. A log whose point is its events (an
+/// SSG override's calls) can be silent, but must record events.
+pub fn check_render<C: Chip>(family: &str, name: &str, audible: bool) {
     let log = read_log(family, name);
     let golden =
         std::fs::read(directory(family).join(format!("{name}.golden"))).expect("the golden reads");
     let expected = decode(&golden, C::OUTPUTS, log.samples as usize)
         .unwrap_or_else(|reason| panic!("{name}: {reason}"));
-    // A golden of silence would pass a chip that renders nothing.
-    assert!(
-        expected.samples.iter().any(|sample| *sample != 0),
-        "{name}: the golden is silent"
-    );
+    if audible {
+        assert!(
+            expected.samples.iter().any(|sample| *sample != 0),
+            "{name}: the golden is silent"
+        );
+    } else {
+        assert!(
+            !expected.events.is_empty(),
+            "{name}: the golden records nothing"
+        );
+    }
     if let Err(reason) = compare::<C>(&log, &expected) {
         panic!("{name}: {reason}");
     }

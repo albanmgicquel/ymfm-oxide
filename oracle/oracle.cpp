@@ -35,6 +35,12 @@
 //     mem <class> <file>   optional, repeatable: loads a raw file as the
 //                          external memory of an access class (io, adpcm-a,
 //                          adpcm-b or pcm); the path is relative to the log
+//     fidelity <f>         optional, for a chip with set_fidelity (the
+//                          YM2203, YM2608, YMF288, YM2610 and YM2610B):
+//                          max, min or med, set before the reset
+//     ssg-override         optional, for a chip with ssg_override (those and
+//                          the YM2149): installs the recording override
+//                          described below
 //
 // then commands, each led by the sample it happens before, in decimal, in
 // nondecreasing order:
@@ -45,6 +51,8 @@
 //         write is usually an address-port and a data-port pair
 //     <sample> r <offset>
 //         calls read(offset) and records the byte it returns
+//     <sample> f <fidelity>
+//         calls set_fidelity with max, min or med
 //
 // Offsets and data are hexadecimal.
 //
@@ -62,6 +70,20 @@
 // image's byte, or 0 past its end; external writes store into the image and
 // are recorded.
 //
+// The chip is constructed and reset. With `ssg-override`, the override is
+// then installed, set_fidelity is called with the default (max) on a chip
+// that has it, which configures the SSG resampler for the override, and the
+// chip is reset again. A `fidelity` is then set, and the chip reset once
+// more before the first sample. Each sample's outputs are cleared before
+// the chip generates it, so an output the chip leaves alone (the SSG's,
+// with an override) reads 0.
+//
+// The override keeps its own 16 registers: ssg_reset clears them,
+// ssg_write stores into them, and ssg_read returns the register XOR 0xA5.
+// Every call is recorded as an event of kind 'o' whose access byte names
+// the call (0 reset, 1 read, 2 write, 3 prescale changed), with the
+// register as the address and the byte written or returned as the value.
+//
 // The output
 // ----------
 // Little-endian binary, on standard output, in version 2 of the format:
@@ -76,8 +98,9 @@
 //                      sample and 0 if not
 //     uint32           the number of events
 //     for each event:  uint32 sample, uint8 kind ('r' for a read, 'x' for an
-//                      external write), uint8 access class (0xff for a
-//                      read), uint32 address (the offset, for a read),
+//                      external write, 'o' for an override call), uint8
+//                      access class (0xff for a read, the call for an
+//                      override), uint32 address (the offset, for a read),
 //                      uint8 value
 //
 // ymfm's outputs are 32-bit, and some chips go past 16 bits: the YM2612 with
@@ -98,6 +121,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -166,9 +191,47 @@ struct Host : ymfm::ymfm_interface {
     }
 };
 
+// The SSG override the log can ask for, as described above.
+struct Recorder : ymfm::ssg_override {
+    Host *host = nullptr;
+    uint8_t regs[16] = {};
+
+    void record(uint8_t call, uint32_t regnum, uint8_t value) {
+        host->events.push_back({host->sample, uint8_t('o'), call, regnum, value});
+    }
+    void ssg_reset() override {
+        memset(regs, 0, sizeof(regs));
+        record(0, 0, 0);
+    }
+    uint8_t ssg_read(uint32_t regnum) override {
+        uint8_t value = regs[regnum & 0x0f] ^ 0xa5;
+        record(1, regnum, value);
+        return value;
+    }
+    void ssg_write(uint32_t regnum, uint8_t data) override {
+        regs[regnum & 0x0f] = data;
+        record(2, regnum, data);
+    }
+    void ssg_prescale_changed() override { record(3, 0, 0); }
+};
+
+// Whether a chip has set_fidelity, and ssg_override.
+template <typename Chip, typename = void>
+struct has_fidelity : std::false_type {};
+template <typename Chip>
+struct has_fidelity<Chip, std::void_t<decltype(std::declval<Chip &>().set_fidelity(ymfm::OPN_FIDELITY_MAX))>>
+    : std::true_type {};
+template <typename Chip, typename = void>
+struct has_override : std::false_type {};
+template <typename Chip>
+struct has_override<Chip, std::void_t<decltype(std::declval<Chip &>().ssg_override(std::declval<ymfm::ssg_override &>()))>>
+    : std::true_type {};
+
+enum Kind { WRITE, READ, FIDELITY };
+
 struct Command {
     uint32_t sample;
-    bool read;
+    Kind kind;
     std::vector<uint32_t> values;
 };
 
@@ -176,8 +239,17 @@ struct Log {
     std::string chip;
     uint32_t clock = 0;
     uint32_t samples = 0;
+    int fidelity = -1;
+    bool ssg_override = false;
     std::vector<Command> commands;
 };
+
+int fidelity(const char *name) {
+    if (strcmp(name, "max") == 0) return ymfm::OPN_FIDELITY_MAX;
+    if (strcmp(name, "min") == 0) return ymfm::OPN_FIDELITY_MIN;
+    if (strcmp(name, "med") == 0) return ymfm::OPN_FIDELITY_MED;
+    fail("unknown fidelity ", name);
+}
 
 int access_class(const char *name) {
     if (strcmp(name, "io") == 0) return ymfm::ACCESS_IO;
@@ -233,6 +305,10 @@ Log parse(const char *path, Host &host) {
             log.clock = uint32_t(strtoul(words[1], nullptr, 10));
         } else if (strcmp(words[0], "samples") == 0 && words.size() == 2) {
             log.samples = uint32_t(strtoul(words[1], nullptr, 10));
+        } else if (strcmp(words[0], "fidelity") == 0 && words.size() == 2) {
+            log.fidelity = fidelity(words[1]);
+        } else if (strcmp(words[0], "ssg-override") == 0 && words.size() == 1) {
+            log.ssg_override = true;
         } else if (strcmp(words[0], "mem") == 0 && words.size() == 3) {
             load(host, directory, words[1], words[2]);
         } else if (words[0][0] >= '0' && words[0][0] <= '9' && words.size() >= 3) {
@@ -243,9 +319,14 @@ Log parse(const char *path, Host &host) {
             }
             last = command.sample;
             if (strcmp(words[1], "w") == 0 && words.size() % 2 == 0) {
-                command.read = false;
+                command.kind = WRITE;
             } else if (strcmp(words[1], "r") == 0 && words.size() == 3) {
-                command.read = true;
+                command.kind = READ;
+            } else if (strcmp(words[1], "f") == 0 && words.size() == 3) {
+                command.kind = FIDELITY;
+                command.values.push_back(uint32_t(fidelity(words[2])));
+                log.commands.push_back(command);
+                continue;
             } else {
                 fail("cannot read the command at sample ", words[0]);
             }
@@ -272,8 +353,36 @@ void put32(uint32_t value) {
 }
 
 template <typename Chip>
+void set_fidelity(Chip &chip, int value) {
+    if constexpr (has_fidelity<Chip>::value) {
+        chip.set_fidelity(ymfm::opn_fidelity(value));
+    } else {
+        (void)chip;
+        (void)value;
+        fail("the chip has no fidelity setting");
+    }
+}
+
+template <typename Chip>
 void render(const Log &log, Host &host) {
     Chip chip(host);
+    chip.reset();
+    Recorder recorder;
+    recorder.host = &host;
+    if (log.ssg_override) {
+        if constexpr (has_override<Chip>::value) {
+            chip.ssg_override(recorder);
+            if constexpr (has_fidelity<Chip>::value) {
+                chip.set_fidelity(ymfm::OPN_FIDELITY_MAX);
+            }
+            chip.reset();
+        } else {
+            fail("the chip has no SSG to override");
+        }
+    }
+    if (log.fidelity >= 0) {
+        set_fidelity(chip, log.fidelity);
+    }
     chip.reset();
     typename Chip::output_data output;
     put("YMFR", 4);
@@ -286,15 +395,18 @@ void render(const Log &log, Host &host) {
         host.fire_timers();
         while (next < log.commands.size() && log.commands[next].sample <= sample) {
             const Command &command = log.commands[next++];
-            if (command.read) {
+            if (command.kind == READ) {
                 uint8_t value = chip.read(command.values[0]);
                 host.events.push_back({sample, uint8_t('r'), 0xff, command.values[0], value});
+            } else if (command.kind == FIDELITY) {
+                set_fidelity(chip, int(command.values[0]));
             } else {
                 for (size_t index = 0; index + 1 < command.values.size(); index += 2) {
                     chip.write(command.values[index], uint8_t(command.values[index + 1]));
                 }
             }
         }
+        output.clear();
         chip.generate(&output, 1);
         for (uint32_t index = 0; index < Chip::OUTPUTS; ++index) {
             put32(uint32_t(output.data[index]));
