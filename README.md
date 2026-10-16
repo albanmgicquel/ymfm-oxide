@@ -26,18 +26,19 @@ or its author.
 | `misc` | `ymfm_misc.h`, `ymfm_misc.cpp` | YM2149 (SSG) |
 | `opl` | `ymfm_opl.h`, `ymfm_opl.cpp` | YM3526 (OPL), Y8950 (MSX-Audio), YM3812 (OPL2), YMF262 (OPL3), YMF289B (OPL3L), YMF278B (OPL4), YM2413 (OPLL), YM2423 (OPLL-X), YMF281 (OPLLP), DS1001 (Konami VRC7) |
 | `opm` | `ymfm_opm.h`, `ymfm_opm.cpp` | YM2151 (OPM), YM2164 (OPP) |
-| `opn` | `ymfm_opn.h`, `ymfm_opn.cpp` | YM2612 (OPN2), YM3438 (OPN2C), YMF276 (OPN2L) |
+| `opn` | `ymfm_opn.h`, `ymfm_opn.cpp` | YM2203 (OPN), YM2608 (OPNA), YMF288 (OPN3L), YM2610 (OPNB), YM2610B (OPNB2), YM2612 (OPN2), YM3438 (OPN2C), YMF276 (OPN2L) |
 | `opq` | `ymfm_opq.h`, `ymfm_opq.cpp` | YM3806 (OPQ), YM3533 |
 | `opz` | `ymfm_opz.h`, `ymfm_opz.cpp` | YM2414 (OPZ) |
 
-Still to come, in `opn`: the chips that combine the FM engine with the SSG
-and ADPCM, the YM2203 (OPN), YM2608 (OPNA), YMF288 (OPN3L), YM2610 (OPNB)
-and YM2610B (OPNB2), with the fidelity setting and the SSG resampler they
-share.
+Every chip upstream implements at that commit is ported. `ymfm_opx.h`, the
+YMF271 (OPX), is out of scope: upstream ships only a header for it, with no
+implementation (`ymfm_opx.cpp` does not exist), so there is nothing to
+translate or to test against.
 
 Everything a chip does is ported, not only its sound: the status register,
-busy time, both timers, the IRQ line, CSM, and external I/O. Save states
-are replaced by `Clone`.
+busy time, both timers, the IRQ line, CSM, external memory and I/O, the
+OPN chips' fidelity and prescale settings, and the SSG override. Save
+states are replaced by `Clone`.
 
 ## Usage
 
@@ -78,12 +79,14 @@ IRQ line after every sample, every status read, and every external write.
 - **Golden renders.** `tests/<family>/` holds synthetic register logs, each
   with a golden render made by the original C++: 17 for the OPL, 12 for the
   OPLL, 1 for the YMF289B, 8 for the Y8950 and 4 for the ADPCM engines
-  alone, 12 for the OPL4, 13 for the OPM, 19 for the OPN, 14 for the OPQ,
-  16 for the OPZ and 5 for the SSG. `cargo test` replays every log and
+  alone, 12 for the OPL4, 13 for the OPM, 44 for the OPN (19 for the
+  OPN2s, 25 for the YM2203, YM2608, YMF288, YM2610 and YM2610B), 14 for
+  the OPQ, 16 for the OPZ and 6 for the SSG. `cargo test` replays every log and
   compares everything; a mismatch reports the first difference, the
   commands that led to it and the register file at that point. Memory
   images are synthetic too: the tests build them (ADPCM by encoding sines,
-  ramps and noise, the OPL4 wavetable from generated waves) and check the
+  ramps and noise, the OPL4 wavetable from generated waves, and a stand-in
+  for the YM2608's rhythm ROM in the layout ymfm expects) and check the
   committed files against what they build, so no sample data comes from
   anywhere else.
 - **Randomized differential tests.** With an oracle built, each chip's test
@@ -128,15 +131,24 @@ c++ -std=c++17 -O2 -I"$YMFM/src" tests/adpcm/engines.cpp \
 YMFM_ENGINE_ORACLE=$PWD/oracle/engines cargo test --test adpcm
 ```
 
-`YMFM_WRITE_IMAGES` rewrites the synthetic ADPCM images in `tests/adpcm`,
+`YMFM_WRITE_IMAGES` rewrites the synthetic ADPCM images in `tests/adpcm`
+and `tests/opn`,
 and `YMFM_PCM_WRITE_IMAGE` the OPL4 wavetable `tests/pcm/wavetable.bin`,
 from the generators in the tests; without them the tests only check that
 the committed images are the generated ones.
 
 A log is text: a header (`chip ym2151`, `clock 3579545`, `samples 30000`,
-and `mem <class> <file>` for an external memory image), then commands led by
-the sample they happen before, `<sample> w <offset> <data> ...` for port
-writes and `<sample> r <offset>` for a read, offsets and data in hex.
+`mem <class> <file>` for an external memory image, `fidelity min` for an
+OPN chip's fidelity, `ssg-override` for the oracle's recording SSG
+override), then commands led by the sample they happen before,
+`<sample> w <offset> <data> ...` for port writes, `<sample> r <offset>` for
+a read and `<sample> f <fidelity>` to change the fidelity, offsets and data
+in hex. A render is binary, version 2 of the format: a header, then every
+output of every sample as a 32-bit value, as ymfm computes it (some chips
+go past 16 bits: the YM2612 at full clip reaches +32768, the YM3438
+-32896, the YMF288's unclamped sum further), the IRQ line after each
+sample, and the events (read results, external writes and override
+calls). The oracle's header documents both in full.
 
 ## Licence
 

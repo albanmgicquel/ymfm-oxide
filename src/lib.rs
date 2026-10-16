@@ -12,21 +12,21 @@
 //! notice, conditions and disclaimer, with a note of what the translation
 //! changed.
 //!
-//! Ported so far:
+//! Every chip upstream implements is ported:
 //!
 //! | Module    | Chips |
 //! |-----------|-------|
 //! | [`misc`]  | YM2149 (SSG) |
 //! | [`opl`]   | YM3526 (OPL), Y8950 (MSX-Audio), YM3812 (OPL2), YMF262 (OPL3), YMF289B (OPL3L), YMF278B (OPL4), YM2413 (OPLL), YM2423 (OPLL-X), YMF281 (OPLLP), DS1001 (Konami VRC7) |
 //! | [`opm`]   | YM2151 (OPM), YM2164 (OPP) |
-//! | [`opn`]   | YM2612 (OPN2), YM3438 (OPN2C), YMF276 (OPN2L) |
+//! | [`opn`]   | YM2203 (OPN), YM2608 (OPNA), YMF288 (OPN3L), YM2610 (OPNB), YM2610B (OPNB2), YM2612 (OPN2), YM3438 (OPN2C), YMF276 (OPN2L) |
 //! | [`opq`]   | YM3806 (OPQ), YM3533 |
 //! | [`opz`]   | YM2414 (OPZ) |
 //!
 //! [`ssg`], [`adpcm`] and [`pcm`] hold the engines the chips share beside
 //! their FM engine: the SSG, ADPCM-A and ADPCM-B, and the OPL4's wavetable.
-//! The rest of [`opn`], the YM2203, YM2608, YMF288, YM2610 and YM2610B, is
-//! still to come.
+//! The YMF271 (OPX), of which upstream has only a header and no
+//! implementation, is out of scope.
 //!
 //! A chip is a plain value: it is created with an [`Interface`], written
 //! through its ports as the hardware is, and pulled one sample at a time at
