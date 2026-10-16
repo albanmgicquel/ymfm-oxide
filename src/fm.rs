@@ -196,7 +196,6 @@ pub(crate) fn attenuation_increment(rate: u32, index: u32) -> u32 {
 /// Returns the 6-bit signed phase displacement for a 3-bit detune value at
 /// a 5-bit key code. The table has been verified against Nuked's equations,
 /// which are complicated enough that ymfm keeps the table.
-#[allow(dead_code)] // the OPM arrives in the next change
 pub(crate) fn detune_adjustment(detune: u32, keycode: u32) -> i32 {
     const DETUNE_ADJUSTMENT: [[u8; 4]; 32] = [
         [0, 0, 1, 2],
@@ -243,7 +242,6 @@ pub(crate) fn detune_adjustment(detune: u32, keycode: u32) -> i32 {
 /// Converts an OPM concatenated block (3 bits), key code (4 bits) and key
 /// fraction (6 bits) to a 0.10 phase step, after applying `delta`. This
 /// serves the OPM and the OPZ.
-#[allow(dead_code)] // the OPM arrives in the next change
 pub(crate) fn opm_key_code_to_phase_step(block_freq: u32, delta: i32) -> u32 {
     // The phase step is essentially the fnum in OPN-speak. ymfm derives this
     // table from the YM2608 manual's fnum formula adjusted to the YM2151's

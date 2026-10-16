@@ -1,0 +1,48 @@
+chip ym2151
+clock 3579545
+samples 36000
+# All eight connections, one per channel in turn, each with every operator
+# at a different multiple and level so that each operator's role is heard:
+# modulators sit at moderate levels, carriers loud. Each note is held for
+# 3000 samples and released. Feedback rises with the algorithm, 0 to 7.
+# The last segment plays all eight together, panned alternately.
+0 w 0 20 1 c0 0 38 1 00 0 40 1 01 0 60 1 20 0 80 1 1f 0 a0 1 04 0 c0 1 00 0 e0 1 38 0 48 1 03 0 68 1 28 0 88 1 1f 0 a8 1 00 0 c8 1 00 0 e8 1 08 0 50 1 02 0 70 1 18 0 90 1 1f 0 b0 1 00 0 d0 1 00 0 f0 1 08 0 58 1 01 0 78 1 04 0 98 1 1f 0 b8 1 02 0 d8 1 00 0 f8 1 28 0 28 1 3a 0 30 1 40  # algorithm 0, feedback 0
+0 w 0 08 1 78
+3000 w 0 08 1 00
+4000 w 0 21 1 c9 0 39 1 00 0 41 1 01 0 61 1 20 0 81 1 1f 0 a1 1 04 0 c1 1 00 0 e1 1 38 0 49 1 03 0 69 1 28 0 89 1 1f 0 a9 1 00 0 c9 1 00 0 e9 1 08 0 51 1 02 0 71 1 18 0 91 1 1f 0 b1 1 00 0 d1 1 00 0 f1 1 08 0 59 1 01 0 79 1 04 0 99 1 1f 0 b9 1 02 0 d9 1 00 0 f9 1 28 0 29 1 3b 0 31 1 40  # algorithm 1, feedback 1
+4000 w 0 08 1 79
+7000 w 0 08 1 01
+8000 w 0 22 1 d2 0 3a 1 00 0 42 1 01 0 62 1 20 0 82 1 1f 0 a2 1 04 0 c2 1 00 0 e2 1 38 0 4a 1 03 0 6a 1 28 0 8a 1 1f 0 aa 1 00 0 ca 1 00 0 ea 1 08 0 52 1 02 0 72 1 18 0 92 1 1f 0 b2 1 00 0 d2 1 00 0 f2 1 08 0 5a 1 01 0 7a 1 04 0 9a 1 1f 0 ba 1 02 0 da 1 00 0 fa 1 28 0 2a 1 3c 0 32 1 40  # algorithm 2, feedback 2
+8000 w 0 08 1 7a
+11000 w 0 08 1 02
+12000 w 0 23 1 db 0 3b 1 00 0 43 1 01 0 63 1 20 0 83 1 1f 0 a3 1 04 0 c3 1 00 0 e3 1 38 0 4b 1 03 0 6b 1 28 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 08 0 53 1 02 0 73 1 18 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 08 0 5b 1 01 0 7b 1 04 0 9b 1 1f 0 bb 1 02 0 db 1 00 0 fb 1 28 0 2b 1 3d 0 33 1 40  # algorithm 3, feedback 3
+12000 w 0 08 1 7b
+15000 w 0 08 1 03
+16000 w 0 24 1 e4 0 3c 1 00 0 44 1 01 0 64 1 20 0 84 1 1f 0 a4 1 04 0 c4 1 00 0 e4 1 38 0 4c 1 03 0 6c 1 28 0 8c 1 1f 0 ac 1 00 0 cc 1 00 0 ec 1 08 0 54 1 02 0 74 1 18 0 94 1 1f 0 b4 1 00 0 d4 1 00 0 f4 1 08 0 5c 1 01 0 7c 1 04 0 9c 1 1f 0 bc 1 02 0 dc 1 00 0 fc 1 28 0 2c 1 3e 0 34 1 40  # algorithm 4, feedback 4
+16000 w 0 08 1 7c
+19000 w 0 08 1 04
+20000 w 0 25 1 ed 0 3d 1 00 0 45 1 01 0 65 1 20 0 85 1 1f 0 a5 1 04 0 c5 1 00 0 e5 1 38 0 4d 1 03 0 6d 1 28 0 8d 1 1f 0 ad 1 00 0 cd 1 00 0 ed 1 08 0 55 1 02 0 75 1 18 0 95 1 1f 0 b5 1 00 0 d5 1 00 0 f5 1 08 0 5d 1 01 0 7d 1 04 0 9d 1 1f 0 bd 1 02 0 dd 1 00 0 fd 1 28 0 2d 1 3f 0 35 1 40  # algorithm 5, feedback 5
+20000 w 0 08 1 7d
+23000 w 0 08 1 05
+24000 w 0 26 1 f6 0 3e 1 00 0 46 1 01 0 66 1 20 0 86 1 1f 0 a6 1 04 0 c6 1 00 0 e6 1 38 0 4e 1 03 0 6e 1 28 0 8e 1 1f 0 ae 1 00 0 ce 1 00 0 ee 1 08 0 56 1 02 0 76 1 18 0 96 1 1f 0 b6 1 00 0 d6 1 00 0 f6 1 08 0 5e 1 01 0 7e 1 04 0 9e 1 1f 0 be 1 02 0 de 1 00 0 fe 1 28 0 2e 1 40 0 36 1 40  # algorithm 6, feedback 6
+24000 w 0 08 1 7e
+27000 w 0 08 1 06
+28000 w 0 27 1 ff 0 3f 1 00 0 47 1 01 0 67 1 20 0 87 1 1f 0 a7 1 04 0 c7 1 00 0 e7 1 38 0 4f 1 03 0 6f 1 28 0 8f 1 1f 0 af 1 00 0 cf 1 00 0 ef 1 08 0 57 1 02 0 77 1 18 0 97 1 1f 0 b7 1 00 0 d7 1 00 0 f7 1 08 0 5f 1 01 0 7f 1 04 0 9f 1 1f 0 bf 1 02 0 df 1 00 0 ff 1 28 0 2f 1 41 0 37 1 40  # algorithm 7, feedback 7
+28000 w 0 08 1 7f
+31000 w 0 08 1 07
+32000 w 0 20 1 98
+32000 w 0 08 1 78
+32000 w 0 21 1 59
+32000 w 0 08 1 79
+32000 w 0 22 1 9a
+32000 w 0 08 1 7a
+32000 w 0 23 1 5b
+32000 w 0 08 1 7b
+32000 w 0 24 1 9c
+32000 w 0 08 1 7c
+32000 w 0 25 1 5d
+32000 w 0 08 1 7d
+32000 w 0 26 1 9e
+32000 w 0 08 1 7e
+32000 w 0 27 1 5f
+32000 w 0 08 1 7f

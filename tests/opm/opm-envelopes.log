@@ -1,0 +1,48 @@
+chip ym2151
+clock 3579545
+samples 44000
+# The envelope: attack rates from instant to slow, first decay into the
+# first decay level (including level 0, which skips decay, and 15, which
+# means 31), the second decay (sustain rate), and release rates, with keys
+# released in each phase. Then rate changes while a note sounds, a re-key
+# during release, and a quick on-off-on. One carrier (algorithm 7, the
+# other operators silent) on channel 3.
+0 w 0 23 1 c7 0 3b 1 00 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 1f 0 bb 1 0a 0 db 1 05 0 fb 1 47 0 2b 1 4c 0 33 1 00  # AR 31 D1R 10 D1L 4 D2R 5 RR 7
+0 w 0 08 1 43
+2500 w 0 08 1 03
+4000 w 0 23 1 c7 0 3b 1 00 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 0c 0 bb 1 14 0 db 1 00 0 fb 1 83 0 2b 1 4c 0 33 1 00  # AR 12 D1R 20 D1L 8 D2R 0 RR 3
+4000 w 0 08 1 43
+7000 w 0 08 1 03
+8000 w 0 23 1 c7 0 3b 1 00 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 14 0 bb 1 00 0 db 1 00 0 fb 1 ff 0 2b 1 4c 0 33 1 00  # AR 20 D1R 0 D1L 15 D2R 0 RR 15
+8000 w 0 08 1 43
+11200 w 0 08 1 03
+12000 w 0 23 1 c7 0 3b 1 00 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 1f 0 bb 1 00 0 db 1 0f 0 fb 1 09 0 2b 1 4c 0 33 1 00  # AR 31 D1R 0 D1L 0 D2R 15 RR 9
+12000 w 0 08 1 43
+15000 w 0 08 1 03
+16000 w 0 23 1 c7 0 3b 1 00 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 05 0 bb 1 0c 0 db 1 03 0 fb 1 26 0 2b 1 4c 0 33 1 00  # AR 5 D1R 12 D1L 2 D2R 3 RR 6
+16000 w 0 08 1 43
+17200 w 0 08 1 03
+20000 w 0 23 1 c7 0 3b 1 00 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 19 0 bb 1 1f 0 db 1 08 0 fb 1 61 0 2b 1 4c 0 33 1 00  # AR 25 D1R 31 D1L 6 D2R 8 RR 1
+20000 w 0 08 1 43
+23000 w 0 08 1 03
+24000 w 0 23 1 c7 0 3b 1 00 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 12 0 bb 1 03 0 db 1 0c 0 fb 1 ac 0 2b 1 4c 0 33 1 00  # AR 18 D1R 3 D1L 10 D2R 12 RR 12
+24000 w 0 08 1 43
+26000 w 0 08 1 03
+28000 w 0 23 1 c7 0 3b 1 00 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 1f 0 bb 1 19 0 db 1 1f 0 fb 1 f0 0 2b 1 4c 0 33 1 00  # AR 31 D1R 25 D1L 15 D2R 31 RR 0
+28000 w 0 08 1 43
+31000 w 0 08 1 03
+32000 w 0 23 1 c7 0 3b 1 00 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 08 0 bb 1 08 0 db 1 01 0 fb 1 14 0 2b 1 4c 0 33 1 00  # AR 8 D1R 8 D1L 1 D2R 1 RR 4
+32000 w 0 08 1 43
+35500 w 0 08 1 03
+36000 w 0 23 1 c7 0 3b 1 00 0 43 1 01 0 63 1 7f 0 83 1 1f 0 a3 1 00 0 c3 1 00 0 e3 1 0f 0 4b 1 01 0 6b 1 7f 0 8b 1 1f 0 ab 1 00 0 cb 1 00 0 eb 1 0f 0 53 1 01 0 73 1 7f 0 93 1 1f 0 b3 1 00 0 d3 1 00 0 f3 1 0f 0 5b 1 01 0 7b 1 00 0 9b 1 0a 0 bb 1 06 0 db 1 02 0 fb 1 55  # rates change while the note sounds
+36000 w 0 08 1 43
+36600 w 0 9b 1 1f
+37200 w 0 bb 1 14
+37800 w 0 fb 1 92
+38400 w 0 08 1 03
+38600 w 0 08 1 43  # re-key during the release
+39400 w 0 08 1 03
+39402 w 0 08 1 43  # off and on again two samples apart
+39404 w 0 08 1 03
+39406 w 0 08 1 43
+43000 w 0 08 1 03

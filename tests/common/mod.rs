@@ -542,7 +542,7 @@ impl Random {
 /// `YMFM_SEED`, 1 by default) with `generate`, renders each through the
 /// oracle, and holds `C` to it. Without `YMFM_ORACLE` it returns at once.
 /// Failing logs are kept in a temporary directory, so a seed can be
-/// replayed; `generate` must start its log with the `chip` and `clock`
+/// replayed, and with `YMFM_KEEP` set every log is; `generate` must start its log with the `chip` and `clock`
 /// lines the oracle needs.
 pub fn differential<C: Chip>(label: &str, generate: impl Fn(u64) -> String) {
     let Some(oracle) = std::env::var_os("YMFM_ORACLE") else {
@@ -558,6 +558,7 @@ pub fn differential<C: Chip>(label: &str, generate: impl Fn(u64) -> String) {
         .unwrap_or(1);
     let scratch = std::env::temp_dir().join(format!("ymfm-oxide-{label}-{}", std::process::id()));
     std::fs::create_dir_all(&scratch).expect("a scratch directory");
+    let keep = std::env::var_os("YMFM_KEEP").is_some();
     let mut failures = Vec::new();
     for seed in first..first + count {
         let text = generate(seed);
@@ -576,13 +577,14 @@ pub fn differential<C: Chip>(label: &str, generate: impl Fn(u64) -> String) {
         let result = decode(&output.stdout, C::OUTPUTS, log.samples as usize)
             .and_then(|expected| compare::<C>(&log, &expected));
         match result {
-            Ok(()) => {
+            Ok(()) if !keep => {
                 std::fs::remove_file(&path).ok();
             }
+            Ok(()) => {}
             Err(reason) => failures.push(format!("seed {seed}: {reason}")),
         }
     }
-    if failures.is_empty() {
+    if failures.is_empty() && !keep {
         std::fs::remove_dir_all(&scratch).ok();
     }
     assert!(

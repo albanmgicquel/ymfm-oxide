@@ -1,0 +1,42 @@
+chip ym2151
+clock 3579545
+samples 52000
+# The LFO: each waveform (sawtooth, square, triangle, noise) at full AM and
+# PM depth on a carrier with AM enabled, PMS 7 and AMS 3; then PMS 0 to 7
+# and AMS 0 to 3 on the triangle, then LFO rates from slowest to fastest,
+# the AM and PM depths written separately through 0x19, the LFO held in
+# reset by test bit 1, and PM at the lowest key code, which underflows the
+# octave.
+0 w 0 21 1 c7 0 39 1 73 0 41 1 01 0 61 1 7f 0 81 1 1f 0 a1 1 00 0 c1 1 00 0 e1 1 0f 0 49 1 01 0 69 1 7f 0 89 1 1f 0 a9 1 00 0 c9 1 00 0 e9 1 0f 0 51 1 01 0 71 1 7f 0 91 1 1f 0 b1 1 00 0 d1 1 00 0 f1 1 0f 0 59 1 01 0 79 1 00 0 99 1 1f 0 b9 1 80 0 d9 1 00 0 f9 1 0f 0 29 1 4a 0 31 1 00  # carrier with AM, PMS 7, AMS 3
+0 w 0 18 1 c8 0 19 1 7f 0 19 1 ff 0 08 1 41
+0 w 0 1b 1 00  # LFO waveform 0
+5000 w 0 1b 1 01  # LFO waveform 1
+10000 w 0 1b 1 02  # LFO waveform 2
+15000 w 0 1b 1 03  # LFO waveform 3
+20000 w 0 1b 1 02
+20000 w 0 39 1 00  # PMS 0
+21500 w 0 39 1 10  # PMS 1
+23000 w 0 39 1 20  # PMS 2
+24500 w 0 39 1 30  # PMS 3
+26000 w 0 39 1 40  # PMS 4
+27500 w 0 39 1 50  # PMS 5
+29000 w 0 39 1 60  # PMS 6
+30500 w 0 39 1 70  # PMS 7
+32000 w 0 39 1 00  # AMS 0
+33500 w 0 39 1 01  # AMS 1
+35000 w 0 39 1 02  # AMS 2
+36500 w 0 39 1 03  # AMS 3
+38000 w 0 39 1 53
+38000 w 0 18 1 00  # LFO rate 00
+39600 w 0 18 1 30  # LFO rate 30
+41200 w 0 18 1 7f  # LFO rate 7f
+42800 w 0 18 1 a5  # LFO rate a5
+44400 w 0 18 1 ff  # LFO rate ff
+46000 w 0 18 1 d0 0 19 1 20  # AM depth 0x20, PM depth unchanged
+47500 w 0 19 1 90  # PM depth 0x10
+49000 w 0 19 1 00 0 19 1 80  # both depths 0: the phase step is static again
+50000 w 0 19 1 7f 0 19 1 ff 0 01 1 02  # LFO held in reset
+51500 w 0 01 1 00  # released
+53000 w 0 1b 1 03 0 29 1 00 0 31 1 00 0 39 1 70  # noise LFO, PM at key code 0
+56000 w 0 1b 1 00 0 29 1 7e 0 31 1 fc 0 d9 1 c0  # sawtooth PM with DT2 3 at the top
+59000 w 0 08 1 01

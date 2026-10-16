@@ -8,6 +8,7 @@
 
 mod fm;
 pub mod opl;
+pub mod opm;
 pub mod ymfm;
 
 pub use ymfm::{AccessClass, Interface, NullInterface, Output};

@@ -1,0 +1,30 @@
+chip ym2151
+clock 3579545
+samples 32000
+# Key scale rate 0 to 3 at a low and a high key code: the same attack,
+# decay and release rates run faster as KS rises and the note climbs. Each
+# segment keys channel 5's carrier for 2000 samples.
+0 w 0 25 1 c7 0 3d 1 00 0 45 1 01 0 65 1 7f 0 85 1 1f 0 a5 1 00 0 c5 1 00 0 e5 1 0f 0 4d 1 01 0 6d 1 7f 0 8d 1 1f 0 ad 1 00 0 cd 1 00 0 ed 1 0f 0 55 1 01 0 75 1 7f 0 95 1 1f 0 b5 1 00 0 d5 1 00 0 f5 1 0f 0 5d 1 01 0 7d 1 00 0 9d 1 0e 0 bd 1 0c 0 dd 1 06 0 fd 1 66 0 2d 1 0e 0 35 1 00  # KS 0, key code 0e
+0 w 0 08 1 45
+2000 w 0 08 1 05
+4000 w 0 25 1 c7 0 3d 1 00 0 45 1 01 0 65 1 7f 0 85 1 1f 0 a5 1 00 0 c5 1 00 0 e5 1 0f 0 4d 1 01 0 6d 1 7f 0 8d 1 1f 0 ad 1 00 0 cd 1 00 0 ed 1 0f 0 55 1 01 0 75 1 7f 0 95 1 1f 0 b5 1 00 0 d5 1 00 0 f5 1 0f 0 5d 1 01 0 7d 1 00 0 9d 1 0e 0 bd 1 0c 0 dd 1 06 0 fd 1 66 0 2d 1 7e 0 35 1 00  # KS 0, key code 7e
+4000 w 0 08 1 45
+6000 w 0 08 1 05
+8000 w 0 25 1 c7 0 3d 1 00 0 45 1 01 0 65 1 7f 0 85 1 1f 0 a5 1 00 0 c5 1 00 0 e5 1 0f 0 4d 1 01 0 6d 1 7f 0 8d 1 1f 0 ad 1 00 0 cd 1 00 0 ed 1 0f 0 55 1 01 0 75 1 7f 0 95 1 1f 0 b5 1 00 0 d5 1 00 0 f5 1 0f 0 5d 1 01 0 7d 1 00 0 9d 1 4e 0 bd 1 0c 0 dd 1 06 0 fd 1 66 0 2d 1 0e 0 35 1 00  # KS 1, key code 0e
+8000 w 0 08 1 45
+10000 w 0 08 1 05
+12000 w 0 25 1 c7 0 3d 1 00 0 45 1 01 0 65 1 7f 0 85 1 1f 0 a5 1 00 0 c5 1 00 0 e5 1 0f 0 4d 1 01 0 6d 1 7f 0 8d 1 1f 0 ad 1 00 0 cd 1 00 0 ed 1 0f 0 55 1 01 0 75 1 7f 0 95 1 1f 0 b5 1 00 0 d5 1 00 0 f5 1 0f 0 5d 1 01 0 7d 1 00 0 9d 1 4e 0 bd 1 0c 0 dd 1 06 0 fd 1 66 0 2d 1 7e 0 35 1 00  # KS 1, key code 7e
+12000 w 0 08 1 45
+14000 w 0 08 1 05
+16000 w 0 25 1 c7 0 3d 1 00 0 45 1 01 0 65 1 7f 0 85 1 1f 0 a5 1 00 0 c5 1 00 0 e5 1 0f 0 4d 1 01 0 6d 1 7f 0 8d 1 1f 0 ad 1 00 0 cd 1 00 0 ed 1 0f 0 55 1 01 0 75 1 7f 0 95 1 1f 0 b5 1 00 0 d5 1 00 0 f5 1 0f 0 5d 1 01 0 7d 1 00 0 9d 1 8e 0 bd 1 0c 0 dd 1 06 0 fd 1 66 0 2d 1 0e 0 35 1 00  # KS 2, key code 0e
+16000 w 0 08 1 45
+18000 w 0 08 1 05
+20000 w 0 25 1 c7 0 3d 1 00 0 45 1 01 0 65 1 7f 0 85 1 1f 0 a5 1 00 0 c5 1 00 0 e5 1 0f 0 4d 1 01 0 6d 1 7f 0 8d 1 1f 0 ad 1 00 0 cd 1 00 0 ed 1 0f 0 55 1 01 0 75 1 7f 0 95 1 1f 0 b5 1 00 0 d5 1 00 0 f5 1 0f 0 5d 1 01 0 7d 1 00 0 9d 1 8e 0 bd 1 0c 0 dd 1 06 0 fd 1 66 0 2d 1 7e 0 35 1 00  # KS 2, key code 7e
+20000 w 0 08 1 45
+22000 w 0 08 1 05
+24000 w 0 25 1 c7 0 3d 1 00 0 45 1 01 0 65 1 7f 0 85 1 1f 0 a5 1 00 0 c5 1 00 0 e5 1 0f 0 4d 1 01 0 6d 1 7f 0 8d 1 1f 0 ad 1 00 0 cd 1 00 0 ed 1 0f 0 55 1 01 0 75 1 7f 0 95 1 1f 0 b5 1 00 0 d5 1 00 0 f5 1 0f 0 5d 1 01 0 7d 1 00 0 9d 1 ce 0 bd 1 0c 0 dd 1 06 0 fd 1 66 0 2d 1 0e 0 35 1 00  # KS 3, key code 0e
+24000 w 0 08 1 45
+26000 w 0 08 1 05
+28000 w 0 25 1 c7 0 3d 1 00 0 45 1 01 0 65 1 7f 0 85 1 1f 0 a5 1 00 0 c5 1 00 0 e5 1 0f 0 4d 1 01 0 6d 1 7f 0 8d 1 1f 0 ad 1 00 0 cd 1 00 0 ed 1 0f 0 55 1 01 0 75 1 7f 0 95 1 1f 0 b5 1 00 0 d5 1 00 0 f5 1 0f 0 5d 1 01 0 7d 1 00 0 9d 1 ce 0 bd 1 0c 0 dd 1 06 0 fd 1 66 0 2d 1 7e 0 35 1 00  # KS 3, key code 7e
+28000 w 0 08 1 45
+30000 w 0 08 1 05

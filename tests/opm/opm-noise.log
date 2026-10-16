@@ -1,0 +1,23 @@
+chip ym2151
+clock 3579545
+samples 40000
+# The noise generator, which replaces channel 7's fourth operator: noise
+# frequencies 0, 5, 16 and 31 alone (algorithm 7 with only O4 open), then
+# beside the other operators on algorithm 5, through an envelope with a
+# release, and with noise switched off again mid-note. The noise LFO
+# waveform runs on channel 6 meanwhile.
+0 w 0 27 1 c7 0 3f 1 00 0 47 1 01 0 67 1 7f 0 87 1 1f 0 a7 1 00 0 c7 1 00 0 e7 1 0f 0 4f 1 01 0 6f 1 7f 0 8f 1 1f 0 af 1 00 0 cf 1 00 0 ef 1 0f 0 57 1 01 0 77 1 7f 0 97 1 1f 0 b7 1 00 0 d7 1 00 0 f7 1 0f 0 5f 1 01 0 7f 1 00 0 9f 1 1f 0 bf 1 00 0 df 1 00 0 ff 1 0a 0 2f 1 40 0 37 1 00
+0 w 0 26 1 c7 0 3e 1 62 0 46 1 01 0 66 1 7f 0 86 1 1f 0 a6 1 00 0 c6 1 00 0 e6 1 0f 0 4e 1 01 0 6e 1 7f 0 8e 1 1f 0 ae 1 00 0 ce 1 00 0 ee 1 0f 0 56 1 01 0 76 1 7f 0 96 1 1f 0 b6 1 00 0 d6 1 00 0 f6 1 0f 0 5e 1 01 0 7e 1 08 0 9e 1 1f 0 be 1 80 0 de 1 00 0 fe 1 0f 0 2e 1 2c 0 36 1 00 0 1b 1 03 0 18 1 e0 0 19 1 60 0 19 1 d0 0 08 1 46  # channel 6 on the noise LFO
+0 w 0 08 1 7f
+0 w 0 0f 1 80  # noise frequency 0
+4000 w 0 0f 1 85  # noise frequency 5
+8000 w 0 0f 1 90  # noise frequency 16
+12000 w 0 0f 1 9f  # noise frequency 31
+16000 w 0 27 1 e5 0 3f 1 00 0 47 1 02 0 67 1 18 0 87 1 1f 0 a7 1 00 0 c7 1 00 0 e7 1 0f 0 4f 1 01 0 6f 1 10 0 8f 1 1f 0 af 1 00 0 cf 1 00 0 ef 1 0f 0 57 1 03 0 77 1 14 0 97 1 1f 0 b7 1 00 0 d7 1 00 0 f7 1 0f 0 5f 1 01 0 7f 1 08 0 9f 1 14 0 bf 1 08 0 df 1 04 0 ff 1 45 0 0f 1 8a  # algorithm 5 with noise
+16000 w 0 08 1 07
+16002 w 0 08 1 7f
+22000 w 0 08 1 07  # release
+25000 w 0 08 1 7f
+28000 w 0 0f 1 0a  # noise off: O4 is an operator again
+31000 w 0 0f 1 9f  # and on
+36000 w 0 08 1 07 0 08 1 06
