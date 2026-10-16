@@ -1,0 +1,78 @@
+chip ym3806
+clock 3579545
+samples 40000
+# The timer, as ymfm guesses it: register 0x03 bit 0 loads and enables timer B
+# and clears its status flag (bit 2), with a period of 16 x (256 - (0xC0 |
+# bits 2-7)) samples. The flag raises the IRQ line. Writing 0x71, the value
+# the PSR-70 uses, then acknowledging with the same write; reads of offset 0
+# (status) and other offsets (0xFF); a new period applied on reload; stopping
+# it with bit 0 clear. A note plays throughout.
+0 w 10 c7 18 00 28 44 38 00 20 44 30 00 40 20 40 81 60 7f 80 1f a0 00 c0 00 e0 0f 48 20 48 81 68 7f 88 1f a8 00 c8 00 e8 0f 50 20 50 81 70 7f 90 1f b0 00 d0 00 f0 0f 58 20 58 81 78 10 98 1f b8 00 d8 00 f8 0f 5 40
+0 r 0
+0 r 1  # unknown offset
+1 r 10
+10 w 3 71  # period 16 x (256 - 0xDC) = 576
+11 r 0
+500 r 0
+585 r 0
+586 r 0
+587 r 0
+600 r 0
+700 w 3 71  # acknowledge
+701 r 0
+1200 r 0
+2000 w 3 fd  # shorter period, applied on reload
+2001 r 0
+2100 r 0
+2500 r 0
+3000 r 0
+5000 w 3 00  # stopped
+5001 r 0
+6000 r 0
+7000 w 3 01  # longest period, 1024
+8100 r 0
+9000 w 3 02  # bit 0 clear: stopped, flag kept
+9001 r 0
+10000 w 3 03
+10000 w 3 03  # a second load while running is ignored
+12000 r 0
+14000 w 3 01
+14500 r 0
+15000 w 3 0d
+15500 r 0
+16000 w 3 19
+16500 r 0
+17000 w 3 25
+17500 r 0
+18000 w 3 35
+18500 r 0
+19000 w 3 41
+19500 r 0
+20000 w 3 4d
+20500 r 0
+21000 w 3 59
+21500 r 0
+22000 w 3 69
+22500 r 0
+23000 w 3 75
+23500 r 0
+24000 w 3 81
+24500 r 0
+25000 w 3 8d
+25500 r 0
+26000 w 3 9d
+26500 r 0
+27000 w 3 a9
+27500 r 0
+28000 w 3 b5
+28500 r 0
+29000 w 3 c1
+29500 r 0
+30000 w 3 d1
+30500 r 0
+31000 w 3 dd
+31500 r 0
+32000 w 3 e9
+32500 r 0
+33000 w 3 f5
+33500 r 0

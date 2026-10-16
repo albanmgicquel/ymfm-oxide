@@ -1,0 +1,29 @@
+chip ym3806
+clock 3579545
+samples 40000
+# The faux reverb stage: once a release falls 18dB, a channel with the reverb
+# bit (bit 7 of 0x18-0x1F) carries on at rate 20 instead of its release rate.
+# Pairs of channels with and without reverb at slow, middle and fast release
+# rates, the bit set and cleared during the reverb stage, and a re-key from it.
+0 w 10 47 18 00 28 43 38 00 20 43 30 00 40 20 40 81 60 7f 80 1f a0 00 c0 00 e0 0f 48 20 48 81 68 7f 88 1f a8 00 c8 00 e8 0f 50 20 50 81 70 7f 90 1f b0 00 d0 00 f0 0f 58 20 58 81 78 02 98 1f b8 00 d8 00 f8 01 5 40  # release rate 1, reverb 0
+0 w 11 87 19 80 29 43 39 60 21 43 31 60 41 20 41 81 61 7f 81 1f a1 00 c1 00 e1 0f 49 20 49 81 69 7f 89 1f a9 00 c9 00 e9 0f 51 20 51 81 71 7f 91 1f b1 00 d1 00 f1 0f 59 20 59 81 79 02 99 1f b9 00 d9 00 f9 01 5 41  # release rate 1, reverb 1
+0 w 12 47 1a 00 2a 43 3a c0 22 43 32 c0 42 20 42 81 62 7f 82 1f a2 00 c2 00 e2 0f 4a 20 4a 81 6a 7f 8a 1f aa 00 ca 00 ea 0f 52 20 52 81 72 7f 92 1f b2 00 d2 00 f2 0f 5a 20 5a 81 7a 02 9a 1f ba 00 da 00 fa 04 5 42  # release rate 4, reverb 0
+0 w 13 87 1b 80 2b 44 3b 20 23 44 33 20 43 20 43 81 63 7f 83 1f a3 00 c3 00 e3 0f 4b 20 4b 81 6b 7f 8b 1f ab 00 cb 00 eb 0f 53 20 53 81 73 7f 93 1f b3 00 d3 00 f3 0f 5b 20 5b 81 7b 02 9b 1f bb 00 db 00 fb 04 5 43  # release rate 4, reverb 1
+0 w 14 47 1c 00 2c 44 3c 80 24 44 34 80 44 20 44 81 64 7f 84 1f a4 00 c4 00 e4 0f 4c 20 4c 81 6c 7f 8c 1f ac 00 cc 00 ec 0f 54 20 54 81 74 7f 94 1f b4 00 d4 00 f4 0f 5c 20 5c 81 7c 02 9c 1f bc 00 dc 00 fc 08 5 44  # release rate 8, reverb 0
+0 w 15 87 1d 80 2d 44 3d e0 25 44 35 e0 45 20 45 81 65 7f 85 1f a5 00 c5 00 e5 0f 4d 20 4d 81 6d 7f 8d 1f ad 00 cd 00 ed 0f 55 20 55 81 75 7f 95 1f b5 00 d5 00 f5 0f 5d 20 5d 81 7d 02 9d 1f bd 00 dd 00 fd 08 5 45  # release rate 8, reverb 1
+0 w 16 47 1e 00 2e 45 3e 40 26 45 36 40 46 20 46 81 66 7f 86 1f a6 00 c6 00 e6 0f 4e 20 4e 81 6e 7f 8e 1f ae 00 ce 00 ee 0f 56 20 56 81 76 7f 96 1f b6 00 d6 00 f6 0f 5e 20 5e 81 7e 02 9e 1f be 00 de 00 fe 0f 5 46  # release rate 15, reverb 0
+0 w 17 87 1f 80 2f 45 3f a0 27 45 37 a0 47 20 47 81 67 7f 87 1f a7 00 c7 00 e7 0f 4f 20 4f 81 6f 7f 8f 1f af 00 cf 00 ef 0f 57 20 57 81 77 7f 97 1f b7 00 d7 00 f7 0f 5f 20 5f 81 7f 02 9f 1f bf 00 df 00 ff 0f 5 47  # release rate 15, reverb 1
+2000 w 5 00
+2000 w 5 01
+2000 w 5 02
+2000 w 5 03
+2000 w 5 04
+2000 w 5 05
+2000 w 5 06
+2000 w 5 07
+9000 w 19 00  # reverb cleared on channel 1
+9000 w 18 80  # reverb set on channel 0
+14000 w 5 43  # re-key from the reverb stage
+16000 w 5 03
+20000 w 14 c0 1c 80 2c 34 3c 00 24 34 34 00 44 20 44 81 64 20 84 1f a4 02 c4 01 e4 3a 4c 20 4c 83 6c 24 8c 1f ac 02 cc 01 ec 3a 54 20 54 82 74 28 94 1f b4 02 d4 01 f4 3a 5c 20 5c 81 7c 08 9c 1f bc 04 dc 01 fc 3a 5 7c  # a full stack with reverb
+22000 w 5 04
