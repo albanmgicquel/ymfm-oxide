@@ -756,7 +756,499 @@ pub(crate) type Opl2Registers = OplRegisters<2>;
 /// The OPL3 register set.
 pub(crate) type Opl3Registers = OplRegisters<3>;
 
-// ---- OPLL register set (opll_registers): not yet ported ----
+//*********************************************************
+//  OPLL REGISTERS
+//*********************************************************
+
+// The OPLL register map, as ymfm documents it:
+//
+//      System-wide registers:
+//           0E --x----- Rhythm enable
+//              ---x---- Bass drum key on
+//              ----x--- Snare drum key on
+//              -----x-- Tom key on
+//              ------x- Top cymbal key on
+//              -------x High hat key on
+//           0F xxxxxxxx Test register
+//
+//     Per-channel registers (channel in address bits 0-3)
+//        10-18 xxxxxxxx F-number (low 8 bits)
+//        20-28 --x----- Sustain on
+//              ---x---- Key on
+//              --- xxx- Block (octvate, 0-7)
+//              -------x F-number (high bit)
+//        30-38 xxxx---- Instrument selection
+//              ----xxxx Volume
+//
+//     User instrument registers (for carrier, modulator operators)
+//        00-01 x------- AM enable
+//              -x------ PM enable (VIB)
+//              --x----- EG type
+//              ---x---- Key scale rate
+//              ----xxxx Multiple value (0-15)
+//           02 xx------ Key scale level (carrier, 0-3)
+//              --xxxxxx Total level (modulator, 0-63)
+//           03 xx------ Key scale level (modulator, 0-3)
+//              ---x---- Rectified wave (carrier)
+//              ----x--- Rectified wave (modulator)
+//              -----xxx Feedback level for operator 1 (0-7)
+//        04-05 xxxx---- Attack rate (0-15)
+//              ----xxxx Decay rate (0-15)
+//        06-07 xxxx---- Sustain level (0-15)
+//              ----xxxx Release rate (0-15)
+//
+//     Internal (fake) registers:
+//        40-48 xxxxxxxx Current instrument base address
+//        4E-5F xxxxxxxx Current instrument base address + operator slot (0/1)
+//        70-FF xxxxxxxx Data for instruments (1-16 plus 3 drums)
+
+/// The size of an OPLL instrument set: fifteen melodic instruments and the
+/// three rhythm ones, eight bytes each.
+pub const OPLL_INSTRUMENT_DATA_SIZE: usize = 0x90;
+
+/// The register set of the OPLL family, with its LFOs and noise generator.
+#[derive(Clone)]
+pub(crate) struct OpllRegisters {
+    /// The LFO AM counter.
+    lfo_am_counter: u16,
+    /// The LFO PM counter.
+    lfo_pm_counter: u16,
+    /// The noise LFSR state.
+    noise_lfsr: u32,
+    /// The current LFO AM value.
+    lfo_am: u8,
+    /// Where each channel's instrument data starts in `data`; it stands in
+    /// for ymfm's pointer.
+    chinst: [u8; 9],
+    /// Where each operator's instrument data starts in `data`, the channel's
+    /// plus the operator slot; it stands in for ymfm's pointer.
+    opinst: [u8; 18],
+    /// The register data, then the instrument data, so that ymfm's pointers
+    /// into either become one index.
+    data: [u8; OpllRegisters::REGISTERS + OPLL_INSTRUMENT_DATA_SIZE],
+}
+
+impl OpllRegisters {
+    /// The number of waveforms offered.
+    const WAVEFORMS: u32 = 2;
+    /// The number of 8-bit registers.
+    pub(crate) const REGISTERS: usize = 0x40;
+    /// Where the instrument data starts in `data`.
+    const INSTDATA: usize = Self::REGISTERS;
+
+    /// Returns a bitfield extracted from a byte.
+    fn byte(&self, offset: u32, start: u32, count: u32, extra_offset: u32) -> u32 {
+        bitfield(
+            u32::from(self.data[(offset + extra_offset) as usize]),
+            start,
+            count,
+        )
+    }
+
+    /// Returns a bitfield extracted from a pair of bytes, MSBs listed first.
+    #[allow(clippy::too_many_arguments)]
+    fn word(
+        &self,
+        offset1: u32,
+        start1: u32,
+        count1: u32,
+        offset2: u32,
+        start2: u32,
+        count2: u32,
+        extra_offset: u32,
+    ) -> u32 {
+        (self.byte(offset1, start1, count1, extra_offset) << count2)
+            | self.byte(offset2, start2, count2, extra_offset)
+    }
+
+    /// Returns a bitfield of a channel's instrument data.
+    fn instchbyte(&self, offset: u32, start: u32, count: u32, choffs: u32) -> u32 {
+        let base = u32::from(self.chinst[choffs as usize]);
+        bitfield(u32::from(self.data[(base + offset) as usize]), start, count)
+    }
+
+    /// Returns a bitfield of an operator's instrument data.
+    fn instopbyte(&self, offset: u32, start: u32, count: u32, opoffs: u32) -> u32 {
+        let base = u32::from(self.opinst[opoffs as usize]);
+        bitfield(u32::from(self.data[(base + offset) as usize]), start, count)
+    }
+
+    /// Reports whether a channel is an active rhythm channel.
+    fn is_rhythm(&self, choffs: u32) -> bool {
+        self.rhythm_enable() != 0 && choffs >= 6
+    }
+
+    /// Sets the instrument data: fifteen melodic instruments, then the bass
+    /// drum, the high hat and snare drum, and the tom and top cymbal.
+    pub(crate) fn set_instrument_data(&mut self, data: &[u8; OPLL_INSTRUMENT_DATA_SIZE]) {
+        self.data[Self::INSTDATA..].copy_from_slice(data);
+    }
+
+    /// Returns the register data, for a diagnostic.
+    pub(crate) fn data(&self) -> &[u8] {
+        &self.data[..Self::REGISTERS]
+    }
+
+    // per-channel registers
+    fn ch_block_freq(&self, choffs: u32) -> u32 {
+        self.word(0x20, 0, 4, 0x10, 0, 8, choffs)
+    }
+    fn ch_sustain(&self, choffs: u32) -> u32 {
+        self.byte(0x20, 5, 1, choffs)
+    }
+    fn ch_total_level(&self, choffs: u32) -> u32 {
+        self.instchbyte(0x02, 0, 6, choffs)
+    }
+    fn ch_instrument(&self, choffs: u32) -> u32 {
+        self.byte(0x30, 4, 4, choffs)
+    }
+
+    // per-operator registers
+    fn op_lfo_pm_enable(&self, opoffs: u32) -> u32 {
+        self.instopbyte(0x00, 6, 1, opoffs)
+    }
+    fn op_eg_sustain(&self, opoffs: u32) -> u32 {
+        self.instopbyte(0x00, 5, 1, opoffs)
+    }
+    fn op_ksr(&self, opoffs: u32) -> u32 {
+        self.instopbyte(0x00, 4, 1, opoffs)
+    }
+    fn op_multiple(&self, opoffs: u32) -> u32 {
+        self.instopbyte(0x00, 0, 4, opoffs)
+    }
+    fn op_ksl(&self, opoffs: u32) -> u32 {
+        self.instopbyte(0x02, 6, 2, opoffs)
+    }
+    fn op_waveform(&self, opoffs: u32) -> u32 {
+        self.instchbyte(0x03, 3 + bitfield(opoffs, 0, 1), 1, opoffs >> 1)
+    }
+    fn op_attack_rate(&self, opoffs: u32) -> u32 {
+        self.instopbyte(0x04, 4, 4, opoffs)
+    }
+    fn op_decay_rate(&self, opoffs: u32) -> u32 {
+        self.instopbyte(0x04, 0, 4, opoffs)
+    }
+    fn op_sustain_level(&self, opoffs: u32) -> u32 {
+        self.instopbyte(0x06, 4, 4, opoffs)
+    }
+    fn op_release_rate(&self, opoffs: u32) -> u32 {
+        self.instopbyte(0x06, 0, 4, opoffs)
+    }
+    fn op_volume(&self, opoffs: u32) -> u32 {
+        self.byte(0x30, 4 * bitfield(!opoffs, 0, 1), 4, opoffs >> 1)
+    }
+}
+
+impl FmRegisters for OpllRegisters {
+    const OUTPUTS: usize = 2;
+    const CHANNELS: usize = 9;
+    const ALL_CHANNELS: u32 = (1 << Self::CHANNELS) - 1;
+    const OPERATORS: usize = Self::CHANNELS * 2;
+    const DEFAULT_PRESCALE: u32 = 4;
+    const EG_CLOCK_DIVIDER: u32 = 1;
+    const CSM_TRIGGER_MASK: u32 = 0;
+    const REG_MODE: u32 = 0x3f;
+    const STATUS_TIMERA: u8 = 0;
+    const STATUS_TIMERB: u8 = 0;
+    const STATUS_BUSY: u8 = 0;
+    const STATUS_IRQ: u8 = 0;
+    const EG_HAS_DEPRESS: bool = true;
+    const MODULATOR_DELAY: bool = true;
+
+    fn new() -> Self {
+        // ymfm leaves the register and instrument data undefined until reset
+        // and the chip's constructor, and points every channel at the user
+        // instrument in the meantime
+        let mut opinst = [0u8; 18];
+        for (opoffs, base) in opinst.iter_mut().enumerate() {
+            *base = bitfield(opoffs as u32, 0, 1) as u8;
+        }
+        OpllRegisters {
+            lfo_am_counter: 0,
+            lfo_pm_counter: 0,
+            noise_lfsr: 1,
+            lfo_am: 0,
+            chinst: [0; 9],
+            opinst,
+            data: [0; Self::REGISTERS + OPLL_INSTRUMENT_DATA_SIZE],
+        }
+    }
+
+    fn reset(&mut self) {
+        self.data[..Self::REGISTERS].fill(0);
+    }
+
+    fn channel_offset(chnum: u32) -> u32 {
+        chnum
+    }
+
+    fn operator_offset(opnum: u32) -> u32 {
+        opnum
+    }
+
+    fn operator_map(&self, dest: &mut [u32; MAX_CHANNELS]) {
+        // for OPLL the map is fixed
+        const fn pair(o1: u8, o2: u8) -> u32 {
+            operator_list(o1, o2, 0xff, 0xff)
+        }
+        dest[..9].copy_from_slice(&[
+            pair(0, 1),   // Channel 0 operators
+            pair(2, 3),   // Channel 1 operators
+            pair(4, 5),   // Channel 2 operators
+            pair(6, 7),   // Channel 3 operators
+            pair(8, 9),   // Channel 4 operators
+            pair(10, 11), // Channel 5 operators
+            pair(12, 13), // Channel 6 operators
+            pair(14, 15), // Channel 7 operators
+            pair(16, 17), // Channel 8 operators
+        ]);
+    }
+
+    fn write(&mut self, index: u16, data: u8) -> Option<(u32, u32)> {
+        let index = u32::from(index);
+
+        // unclear the address is masked down to 6 bits or if writes above
+        // the register top are ignored; ymfm assumes the latter for now
+        if index >= Self::REGISTERS as u32 {
+            return None;
+        }
+
+        // write the new data
+        self.data[index as usize] = data;
+        let data = u32::from(data);
+
+        // handle writes to the rhythm keyons
+        if index == 0x0e {
+            let opmask = if bitfield(data, 5, 1) != 0 {
+                bitfield(data, 0, 5)
+            } else {
+                0
+            };
+            return Some((RHYTHM_CHANNEL, opmask));
+        }
+
+        // handle writes to the channel keyons
+        if (index & 0xf0) == 0x20 {
+            let channel = index & 0x0f;
+            if (channel as usize) < Self::CHANNELS {
+                let opmask = if bitfield(data, 4, 1) != 0 { 3 } else { 0 };
+                return Some((channel, opmask));
+            }
+        }
+        None
+    }
+
+    fn clock_noise_and_lfo(&mut self) -> i32 {
+        // implementation is the same as OPL with fixed depths
+        opl_clock_noise_and_lfo(
+            &mut self.noise_lfsr,
+            &mut self.lfo_am_counter,
+            &mut self.lfo_pm_counter,
+            &mut self.lfo_am,
+            1,
+            1,
+        )
+    }
+
+    fn lfo_am_offset(&self, _choffs: u32) -> u32 {
+        // on OPL this is just a fixed value
+        u32::from(self.lfo_am)
+    }
+
+    fn noise_state(&self) -> u32 {
+        self.noise_lfsr >> 23
+    }
+
+    fn cache_operator_data(&mut self, choffs: u32, opoffs: u32, cache: &mut OpdataCache) {
+        // first set up the instrument data
+        let instrument = self.ch_instrument(choffs);
+        self.chinst[choffs as usize] = if self.rhythm_enable() != 0 && choffs >= 6 {
+            (Self::INSTDATA as u32 + 8 * (15 + (choffs - 6))) as u8
+        } else if instrument == 0 {
+            0
+        } else {
+            (Self::INSTDATA as u32 + 8 * (instrument - 1)) as u8
+        };
+        self.opinst[opoffs as usize] = self.chinst[choffs as usize] + bitfield(opoffs, 0, 1) as u8;
+
+        // set up the easy stuff
+        cache.waveform = (self.op_waveform(opoffs) % Self::WAVEFORMS) as u8;
+
+        // get frequency from the channel
+        let block_freq = self.ch_block_freq(choffs);
+        cache.block_freq = block_freq;
+
+        // compute the keycode: block_freq is:
+        //
+        //     11  |
+        //     1098|76543210
+        //     BBBF|FFFFFFFF
+        //     ^^^^
+        //
+        // the 4-bit keycode uses the top 4 bits
+        let keycode = bitfield(block_freq, 8, 4);
+
+        // no detune adjustment on OPLL
+        cache.detune = 0;
+
+        // multiple value, as an x.1 value (0 means 0.5); replace the low bit
+        // with a table lookup to give 0,1,2,3,4,5,6,7,8,9,10,10,12,12,15,15
+        let multiple = self.op_multiple(opoffs);
+        cache.multiple = ((multiple & 0xe) | bitfield(0xc2aa, multiple, 1)) * 2;
+        if cache.multiple == 0 {
+            cache.multiple = 1;
+        }
+
+        // phase step, or PHASE_STEP_DYNAMIC if PM is active; this depends on
+        // block_freq, detune, and multiple, so compute it after we've done
+        // those
+        cache.phase_step = if self.op_lfo_pm_enable(opoffs) == 0 {
+            self.compute_phase_step(choffs, opoffs, cache, 0)
+        } else {
+            OpdataCache::PHASE_STEP_DYNAMIC
+        };
+
+        // total level, scaled by 8; for non-rhythm operator 0, this is the
+        // total level from the instrument data; for other operators it is
+        // 4*volume
+        cache.total_level =
+            if bitfield(opoffs, 0, 1) == 1 || (self.rhythm_enable() != 0 && choffs >= 7) {
+                self.op_volume(opoffs) * 4
+            } else {
+                self.ch_total_level(choffs)
+            };
+        cache.total_level <<= 3;
+
+        // pre-add key scale level
+        let ksl = self.op_ksl(opoffs);
+        if ksl != 0 {
+            cache.total_level +=
+                opl_key_scale_atten(bitfield(block_freq, 9, 3), bitfield(block_freq, 5, 4)) << ksl;
+        }
+
+        // 4-bit sustain level, but 15 means 31 so effectively 5 bits
+        cache.eg_sustain = self.op_sustain_level(opoffs);
+        cache.eg_sustain |= (cache.eg_sustain + 1) & 0x10;
+        cache.eg_sustain <<= 5;
+
+        // The envelope diagram in the YM2413 datasheet gives values for these
+        // in ms from 0->48dB. The attack/decay tables give values in ms from
+        // 0->96dB, so to pick an equivalent decay rate, ymfm finds the
+        // closest match that is 2x the 0->48dB value:
+        //
+        //     DP =   10ms (0->48db) ->   20ms (0->96db); decay of 12 gives   19.20ms
+        //     RR =  310ms (0->48db) ->  620ms (0->96db); decay of  7 gives  613.76ms
+        //     RS = 1200ms (0->48db) -> 2400ms (0->96db); decay of  5 gives 2455.04ms
+        //
+        // The envelope diagram for percussive sounds (eg_sustain() == 0) also
+        // uses "RR" to mean both the constant RR above and the Release Rate
+        // specified in the instrument data. In this case, Relief Pitcher's
+        // credit sound bears out that the Release Rate is used during
+        // sustain, and that the constant RR (or RS) is used during the
+        // release phase.
+        const DP: u8 = 12 * 4;
+        const RR: u8 = 7 * 4;
+        const RS: u8 = 5 * 4;
+
+        // determine KSR adjustment for envelope rates
+        let ksrval = keycode >> (2 * (self.op_ksr(opoffs) ^ 1));
+        cache.eg_rate[EG_DEPRESS] = DP;
+        cache.eg_rate[EG_ATTACK] = effective_rate(self.op_attack_rate(opoffs) * 4, ksrval);
+        cache.eg_rate[EG_DECAY] = effective_rate(self.op_decay_rate(opoffs) * 4, ksrval);
+        if self.op_eg_sustain(opoffs) != 0 {
+            cache.eg_rate[EG_SUSTAIN] = 0;
+            cache.eg_rate[EG_RELEASE] = if self.ch_sustain(choffs) != 0 {
+                RS
+            } else {
+                effective_rate(self.op_release_rate(opoffs) * 4, ksrval)
+            };
+        } else {
+            cache.eg_rate[EG_SUSTAIN] = effective_rate(self.op_release_rate(opoffs) * 4, ksrval);
+            cache.eg_rate[EG_RELEASE] = if self.ch_sustain(choffs) != 0 { RS } else { RR };
+        }
+    }
+
+    fn compute_phase_step(
+        &mut self,
+        _choffs: u32,
+        opoffs: u32,
+        cache: &OpdataCache,
+        lfo_raw_pm: i32,
+    ) -> u32 {
+        // phase step computation is the same as OPL but the block_freq has
+        // one more bit, which we shift in
+        let pm = if self.op_lfo_pm_enable(opoffs) != 0 {
+            lfo_raw_pm
+        } else {
+            0
+        };
+        opl_compute_phase_step(cache.block_freq << 1, cache.multiple, pm)
+    }
+
+    fn waveform(&self, index: u8) -> &[u16; WAVEFORM_LENGTH] {
+        // the OPLL's two waveforms, the sine and the half sine, are the
+        // first two of the OPL's, built the same way
+        &OPL_WAVEFORMS[index as usize]
+    }
+
+    // the OPLL has no timers, status or CSM
+    fn timer_a_value(&self) -> u32 {
+        0
+    }
+    fn timer_b_value(&self) -> u32 {
+        0
+    }
+    fn reset_timer_b(&self) -> u32 {
+        0
+    }
+    fn reset_timer_a(&self) -> u32 {
+        0
+    }
+    fn enable_timer_b(&self) -> u32 {
+        0
+    }
+    fn enable_timer_a(&self) -> u32 {
+        0
+    }
+    fn load_timer_b(&self) -> u32 {
+        0
+    }
+    fn load_timer_a(&self) -> u32 {
+        0
+    }
+    fn csm(&self) -> u32 {
+        0
+    }
+    fn rhythm_enable(&self) -> u32 {
+        self.byte(0x0e, 5, 1, 0)
+    }
+
+    fn ch_feedback(&self, choffs: u32) -> u32 {
+        self.instchbyte(0x03, 0, 3, choffs)
+    }
+    fn ch_algorithm(&self, _choffs: u32) -> u32 {
+        0
+    }
+    fn ch_output_any(&self, _choffs: u32) -> u32 {
+        1
+    }
+    fn ch_output_0(&self, choffs: u32) -> u32 {
+        u32::from(!self.is_rhythm(choffs))
+    }
+    fn ch_output_1(&self, choffs: u32) -> u32 {
+        u32::from(self.is_rhythm(choffs))
+    }
+    fn ch_output_2(&self, _choffs: u32) -> u32 {
+        0
+    }
+    fn ch_output_3(&self, _choffs: u32) -> u32 {
+        0
+    }
+
+    fn op_lfo_am_enable(&self, opoffs: u32) -> u32 {
+        self.instopbyte(0x00, 7, 1, opoffs)
+    }
+}
 
 //*********************************************************
 //  YM3526
@@ -1174,8 +1666,584 @@ impl<I: Interface> Ymf262<I> {
     }
 }
 
-// ---- YMF289B: not yet ported ----
+//*********************************************************
+//  YMF289B
+//*********************************************************
+
+// YMF289B is a YMF262 with the following changes:
+//   * "Power down" mode added
+//   * Bulk register clear added
+//   * Busy flag added to the status register
+//   * Shorter busy times
+//   * All registers can be read
+//   * Only 2 outputs exposed
+
+/// The Yamaha YMF289B (OPL3L): a YMF262 with a power-down mode, a bulk
+/// register clear, a busy flag, shorter busy times, readable registers, and
+/// two of its four outputs.
+#[derive(Clone)]
+pub struct Ymf289b<I: Interface = NullInterface> {
+    /// The address register.
+    address: u16,
+    /// The core FM engine.
+    fm: FmEngine<Opl3Registers, I>,
+}
+
+impl<I: Interface> Ymf289b<I> {
+    /// The number of outputs.
+    pub const OUTPUTS: usize = 2;
+
+    /// The status bits the busy flag sets.
+    const STATUS_BUSY_FLAGS: u8 = 0x05;
+
+    /// Creates a chip that talks to the system through `intf`, reset.
+    pub fn new(intf: I) -> Self {
+        let mut chip = Ymf289b {
+            address: 0,
+            fm: FmEngine::new(intf),
+        };
+        chip.reset();
+        chip
+    }
+
+    /// Resets the chip.
+    pub fn reset(&mut self) {
+        // reset the engines
+        self.fm.reset();
+    }
+
+    /// Returns the output sample rate for an input clock.
+    pub fn sample_rate(&self, input_clock: u32) -> u32 {
+        self.fm.sample_rate(input_clock)
+    }
+
+    /// Invalidates the cached operator data.
+    pub fn invalidate_caches(&mut self) {
+        self.fm.invalidate_caches();
+    }
+
+    /// Reports whether the chip is in YMF289B mode, bit 2 of register 0x105.
+    fn ymf289b_mode(&self) -> bool {
+        (self.fm.regs().data()[0x105] & 0x04) != 0
+    }
+
+    /// Reads the status register.
+    pub fn read_status(&mut self) -> u8 {
+        let mut result = self.fm.status();
+
+        // YMF289B adds a busy flag
+        if self.ymf289b_mode() && self.fm.intf_mut().is_busy() {
+            result |= Self::STATUS_BUSY_FLAGS;
+        }
+        result
+    }
+
+    /// Reads the data register: in YMF289B mode, the register the address
+    /// selects.
+    pub fn read_data(&mut self) -> u8 {
+        // YMF289B can read register data back
+        if self.ymf289b_mode() {
+            self.fm.regs().data()[self.address as usize]
+        } else {
+            0xff
+        }
+    }
+
+    /// Reads from the chip: the status at offset 0, the data at 1.
+    pub fn read(&mut self, offset: u32) -> u8 {
+        match offset & 3 {
+            0 => self.read_status(), // status port
+            1 => self.read_data(),   // data port
+            _ => 0xff,
+        }
+    }
+
+    /// Writes the low address register.
+    pub fn write_address(&mut self, data: u8) {
+        self.address = u16::from(data);
+
+        // count busy time
+        self.fm.intf_mut().set_busy_end(56);
+    }
+
+    /// Writes the data register.
+    pub fn write_data(&mut self, data: u8) {
+        // write to FM
+        self.fm.write(self.address, data);
+
+        // writes to 0x108 with the CLR flag set clear the registers
+        if self.address == 0x108 && bitfield(u32::from(data), 2, 1) != 0 {
+            self.fm.regs_mut().reset();
+        }
+
+        // count busy time
+        self.fm.intf_mut().set_busy_end(56);
+    }
+
+    /// Writes the high address register, which selects the second bank.
+    pub fn write_address_hi(&mut self, data: u8) {
+        // just set the address
+        self.address = u16::from(data) | 0x100;
+
+        // tests reveal that in compatibility mode, upper bit is masked except
+        // for register 0x105
+        if self.fm.regs().newflag() == 0 && self.address != 0x105 {
+            self.address &= 0xff;
+        }
+
+        // count busy time
+        self.fm.intf_mut().set_busy_end(56);
+    }
+
+    /// Writes to the chip: the address ports at offsets 0 and 2 (the second
+    /// bank), the data ports at 1 and 3.
+    pub fn write(&mut self, offset: u32, data: u8) {
+        match offset & 3 {
+            0 => self.write_address(data),    // address port
+            2 => self.write_address_hi(data), // address port
+            _ => self.write_data(data),       // data port
+        }
+    }
+
+    /// Generates one sample into each element of `output`.
+    pub fn generate(&mut self, output: &mut [Output<2>]) {
+        for out in output.iter_mut() {
+            // clock the system
+            self.fm.clock(FmEngine::<Opl3Registers, I>::ALL_CHANNELS);
+
+            // update the FM content; mixing details for YMF262 need
+            // verification
+            let mut full = Output::<4>::default();
+            self.fm.output(
+                &mut full.clear().data,
+                0,
+                32767,
+                FmEngine::<Opl3Registers, I>::ALL_CHANNELS,
+            );
+
+            // YMF278B output is 16-bit offset serial via YAC512 DAC, but only
+            // 2 of the 4 outputs are exposed
+            out.data[0] = full.data[0];
+            out.data[1] = full.data[1];
+            out.clamp16();
+        }
+    }
+
+    /// Reports the expiry of timer `tnum` (0 or 1), which the interface's
+    /// `set_timer` asked for.
+    pub fn timer_expired(&mut self, tnum: u32) {
+        self.fm.engine_timer_expired(tnum);
+    }
+
+    /// Returns the interface.
+    pub fn intf(&self) -> &I {
+        self.fm.intf()
+    }
+
+    /// Returns the interface, mutably.
+    pub fn intf_mut(&mut self) -> &mut I {
+        self.fm.intf_mut()
+    }
+
+    /// Returns the register file as last written, for a diagnostic.
+    pub fn registers(&self) -> &[u8] {
+        self.fm.regs().data()
+    }
+}
 
 // ---- YMF278B: not yet ported ----
 
-// ---- OPLL chips (YM2413, YM2423, YMF281, DS1001): not yet ported ----
+//*********************************************************
+//  OPLL BASE
+//*********************************************************
+
+/// The OPLL core every OPLL variant shares: nine 2-operator channels, or six
+/// and five rhythm sounds, playing instruments from a built-in set of
+/// fifteen, three rhythm ones and one the registers define; two outputs, the
+/// melody and the rhythm, through a built-in 9-bit DAC. The chips differ
+/// only in their instrument sets; this takes any set.
+#[derive(Clone)]
+pub struct OpllBase<I: Interface = NullInterface> {
+    /// The address register.
+    address: u8,
+    /// The core FM engine.
+    fm: FmEngine<OpllRegisters, I>,
+}
+
+impl<I: Interface> OpllBase<I> {
+    /// The number of outputs: the melody, then the rhythm.
+    pub const OUTPUTS: usize = 2;
+
+    /// Creates a chip that talks to the system through `intf` and plays the
+    /// instrument set `instruments`, reset. The set is the fifteen melodic
+    /// instruments, then the bass drum, the high hat and snare drum, and the
+    /// tom and top cymbal, eight bytes each in the layout of registers 0 to
+    /// 7.
+    pub fn new(intf: I, instruments: &[u8; OPLL_INSTRUMENT_DATA_SIZE]) -> Self {
+        let mut chip = OpllBase {
+            address: 0,
+            fm: FmEngine::new(intf),
+        };
+        chip.set_instrument_data(instruments);
+        chip.reset();
+        chip
+    }
+
+    /// Replaces the instrument set. As in ymfm this takes effect as the
+    /// cached operator data is next refreshed, on the next register write
+    /// or `invalidate_caches`.
+    pub fn set_instrument_data(&mut self, instruments: &[u8; OPLL_INSTRUMENT_DATA_SIZE]) {
+        self.fm.regs_mut().set_instrument_data(instruments);
+    }
+
+    /// Resets the chip.
+    pub fn reset(&mut self) {
+        // reset the engines
+        self.fm.reset();
+    }
+
+    /// Returns the output sample rate for an input clock.
+    pub fn sample_rate(&self, input_clock: u32) -> u32 {
+        self.fm.sample_rate(input_clock)
+    }
+
+    /// Invalidates the cached operator data.
+    pub fn invalidate_caches(&mut self) {
+        self.fm.invalidate_caches();
+    }
+
+    /// Reads the status register; the OPLL has none, and this gives 0.
+    pub fn read_status(&mut self) -> u8 {
+        0x00
+    }
+
+    /// Reads from the chip; the OPLL has nothing to read, and this gives 0.
+    pub fn read(&mut self, _offset: u32) -> u8 {
+        0x00
+    }
+
+    /// Writes the address register.
+    pub fn write_address(&mut self, data: u8) {
+        // OPLL doesn't expose a busy signal, but datasheets are pretty
+        // consistent in indicating that address writes should be no faster
+        // than every 12 clocks
+        self.fm.intf_mut().set_busy_end(12);
+
+        // just set the address
+        self.address = data;
+    }
+
+    /// Writes the data register.
+    pub fn write_data(&mut self, data: u8) {
+        // OPLL doesn't expose a busy signal, but datasheets are pretty
+        // consistent in indicating that data writes should be no faster than
+        // every 84 clocks
+        self.fm.intf_mut().set_busy_end(84);
+
+        // write to FM
+        self.fm.write(u16::from(self.address), data);
+    }
+
+    /// Writes to the chip: the address port at offset 0, the data port at 1.
+    pub fn write(&mut self, offset: u32, data: u8) {
+        match offset & 1 {
+            0 => self.write_address(data), // address port
+            _ => self.write_data(data),    // data port
+        }
+    }
+
+    /// Generates one sample into each element of `output`.
+    pub fn generate(&mut self, output: &mut [Output<2>]) {
+        for out in output.iter_mut() {
+            // clock the system
+            self.fm.clock(FmEngine::<OpllRegisters, I>::ALL_CHANNELS);
+
+            // update the FM content; OPLL has a built-in 9-bit DAC
+            self.fm.output(
+                &mut out.clear().data,
+                5,
+                256,
+                FmEngine::<OpllRegisters, I>::ALL_CHANNELS,
+            );
+
+            // final output is multiplexed; ymfm doesn't simulate that except
+            // to average over everything
+            out.data[0] = (out.data[0] * 128) / 9;
+            out.data[1] = (out.data[1] * 128) / 9;
+        }
+    }
+
+    /// Reports the expiry of timer `tnum`; the OPLL has no timers, and
+    /// never asks for one.
+    pub fn timer_expired(&mut self, tnum: u32) {
+        self.fm.engine_timer_expired(tnum);
+    }
+
+    /// Returns the interface.
+    pub fn intf(&self) -> &I {
+        self.fm.intf()
+    }
+
+    /// Returns the interface, mutably.
+    pub fn intf_mut(&mut self) -> &mut I {
+        self.fm.intf_mut()
+    }
+
+    /// Returns the register file as last written, for a diagnostic.
+    pub fn registers(&self) -> &[u8] {
+        self.fm.regs().data()
+    }
+}
+
+/// Defines an OPLL variant: `OpllBase` with its own default instrument set.
+macro_rules! opll_variant {
+    ($(#[$doc:meta])* $chip:ident, $rom:ident) => {
+        $(#[$doc])*
+        #[derive(Clone)]
+        pub struct $chip<I: Interface = NullInterface>(OpllBase<I>);
+
+        impl<I: Interface> $chip<I> {
+            /// The number of outputs: the melody, then the rhythm.
+            pub const OUTPUTS: usize = 2;
+
+            /// The built-in instrument set, in the layout `with_instruments`
+            /// takes.
+            pub const DEFAULT_INSTRUMENTS: &'static [u8; OPLL_INSTRUMENT_DATA_SIZE] = &$rom;
+
+            /// Creates a chip that talks to the system through `intf`, with
+            /// its built-in instrument set, reset.
+            pub fn new(intf: I) -> Self {
+                $chip(OpllBase::new(intf, &$rom))
+            }
+
+            /// Creates a chip that plays `instruments` in place of its
+            /// built-in set, reset.
+            pub fn with_instruments(
+                intf: I,
+                instruments: &[u8; OPLL_INSTRUMENT_DATA_SIZE],
+            ) -> Self {
+                $chip(OpllBase::new(intf, instruments))
+            }
+
+            /// Replaces the instrument set; see `OpllBase::set_instrument_data`.
+            pub fn set_instrument_data(&mut self, instruments: &[u8; OPLL_INSTRUMENT_DATA_SIZE]) {
+                self.0.set_instrument_data(instruments);
+            }
+
+            /// Resets the chip.
+            pub fn reset(&mut self) {
+                self.0.reset();
+            }
+
+            /// Returns the output sample rate for an input clock.
+            pub fn sample_rate(&self, input_clock: u32) -> u32 {
+                self.0.sample_rate(input_clock)
+            }
+
+            /// Invalidates the cached operator data.
+            pub fn invalidate_caches(&mut self) {
+                self.0.invalidate_caches();
+            }
+
+            /// Reads the status register; the OPLL has none, and this gives
+            /// 0.
+            pub fn read_status(&mut self) -> u8 {
+                self.0.read_status()
+            }
+
+            /// Reads from the chip; the OPLL has nothing to read, and this
+            /// gives 0.
+            pub fn read(&mut self, offset: u32) -> u8 {
+                self.0.read(offset)
+            }
+
+            /// Writes the address register.
+            pub fn write_address(&mut self, data: u8) {
+                self.0.write_address(data);
+            }
+
+            /// Writes the data register.
+            pub fn write_data(&mut self, data: u8) {
+                self.0.write_data(data);
+            }
+
+            /// Writes to the chip: the address port at offset 0, the data
+            /// port at 1.
+            pub fn write(&mut self, offset: u32, data: u8) {
+                self.0.write(offset, data);
+            }
+
+            /// Generates one sample into each element of `output`.
+            pub fn generate(&mut self, output: &mut [Output<2>]) {
+                self.0.generate(output);
+            }
+
+            /// Reports the expiry of timer `tnum`; the OPLL has no timers,
+            /// and never asks for one.
+            pub fn timer_expired(&mut self, tnum: u32) {
+                self.0.timer_expired(tnum);
+            }
+
+            /// Returns the interface.
+            pub fn intf(&self) -> &I {
+                self.0.intf()
+            }
+
+            /// Returns the interface, mutably.
+            pub fn intf_mut(&mut self) -> &mut I {
+                self.0.intf_mut()
+            }
+
+            /// Returns the register file as last written, for a diagnostic.
+            pub fn registers(&self) -> &[u8] {
+                self.0.registers()
+            }
+        }
+    };
+}
+
+//*********************************************************
+//  YM2413
+//*********************************************************
+
+opll_variant!(
+    /// The Yamaha YM2413 (OPLL), with ymfm's copyright-free stand-in for its
+    /// instrument ROM.
+    Ym2413,
+    YM2413_INSTRUMENTS
+);
+
+// table below taken from
+// https://github.com/plgDavid/misc/wiki/Copyright-free-OPLL(x)-ROM-patches
+#[rustfmt::skip]
+const YM2413_INSTRUMENTS: [u8; OPLL_INSTRUMENT_DATA_SIZE] = [
+    //April 2015 David Viens, tweaked May 19-21th 2015 Hubert Lamontagne
+    0x71, 0x61, 0x1E, 0x17, 0xEF, 0x7F, 0x00, 0x17, //Violin
+    0x13, 0x41, 0x1A, 0x0D, 0xF8, 0xF7, 0x23, 0x13, //Guitar
+    0x13, 0x01, 0x99, 0x00, 0xF2, 0xC4, 0x11, 0x23, //Piano
+    0x31, 0x61, 0x0E, 0x07, 0x98, 0x64, 0x70, 0x27, //Flute
+    0x22, 0x21, 0x1E, 0x06, 0xBF, 0x76, 0x00, 0x28, //Clarinet
+    0x31, 0x22, 0x16, 0x05, 0xE0, 0x71, 0x0F, 0x18, //Oboe
+    0x21, 0x61, 0x1D, 0x07, 0x82, 0x8F, 0x10, 0x07, //Trumpet
+    0x23, 0x21, 0x2D, 0x14, 0xFF, 0x7F, 0x00, 0x07, //Organ
+    0x41, 0x61, 0x1B, 0x06, 0x64, 0x65, 0x10, 0x17, //Horn
+    0x61, 0x61, 0x0B, 0x18, 0x85, 0xFF, 0x81, 0x07, //Synthesizer
+    0x13, 0x01, 0x83, 0x11, 0xFA, 0xE4, 0x10, 0x04, //Harpsichord
+    0x17, 0x81, 0x23, 0x07, 0xF8, 0xF8, 0x22, 0x12, //Vibraphone
+    0x61, 0x50, 0x0C, 0x05, 0xF2, 0xF5, 0x29, 0x42, //Synthesizer Bass
+    0x01, 0x01, 0x54, 0x03, 0xC3, 0x92, 0x03, 0x02, //Acoustic Bass
+    0x41, 0x41, 0x89, 0x03, 0xF1, 0xE5, 0x11, 0x13, //Electric Guitar
+    0x01, 0x01, 0x18, 0x0F, 0xDF, 0xF8, 0x6A, 0x6D, //rhythm 1
+    0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x48, //rhythm 2
+    0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55, //rhythm 3
+];
+
+//*********************************************************
+//  YM2423
+//*********************************************************
+
+opll_variant!(
+    /// The Yamaha YM2423 (OPLL-X), with ymfm's copyright-free stand-in for
+    /// its instrument ROM.
+    Ym2423,
+    YM2423_INSTRUMENTS
+);
+
+// table below taken from
+// https://github.com/plgDavid/misc/wiki/Copyright-free-OPLL(x)-ROM-patches
+#[rustfmt::skip]
+const YM2423_INSTRUMENTS: [u8; OPLL_INSTRUMENT_DATA_SIZE] = [
+    // May 4-6 2016 Hubert Lamontagne
+    // Doesn't seem to have any diff between opllx-x and opllx-y
+    // Drums seem identical to regular opll
+    0x61, 0x61, 0x1B, 0x07, 0x94, 0x5F, 0x10, 0x06, //1 Strings Saw wave with vibrato Violin
+    0x93, 0xB1, 0x51, 0x04, 0xF3, 0xF2, 0x70, 0xFB, //2 Guitar Jazz GuitarPiano
+    0x41, 0x21, 0x11, 0x85, 0xF2, 0xF2, 0x70, 0x75, //3 Electric Guitar Same as OPLL No.15 Synth
+    0x93, 0xB2, 0x28, 0x07, 0xF3, 0xF2, 0x70, 0xB4, //4 Electric Piano 2 Slow attack, tremoloDing-a-ling
+    0x72, 0x31, 0x97, 0x05, 0x51, 0x6F, 0x60, 0x09, //5  Flute Same as OPLL No.4Clarinet
+    0x13, 0x30, 0x18, 0x06, 0xF7, 0xF4, 0x50, 0x85, //6 Marimba  Also be used as steel drumXyophone
+    0x51, 0x31, 0x1C, 0x07, 0x51, 0x71, 0x20, 0x26, //7 Trumpet  Same as OPLL No.7Trumpet
+    0x41, 0xF4, 0x1B, 0x07, 0x74, 0x34, 0x00, 0x06, //8 Harmonica Harmonica synth
+    0x50, 0x30, 0x4D, 0x03, 0x42, 0x65, 0x20, 0x06, //9 Tuba Tuba
+    0x40, 0x20, 0x10, 0x85, 0xF3, 0xF5, 0x20, 0x04, //10  Synth Brass 2 Synth sweep
+    0x61, 0x61, 0x1B, 0x07, 0xC5, 0x96, 0xF3, 0xF6, //11  Short Saw Saw wave with short envelopeSynth hit
+    0xF9, 0xF1, 0xDC, 0x00, 0xF5, 0xF3, 0x77, 0xF2, //12  Vibraphone Bright vibraphoneVibes
+    0x60, 0xA2, 0x91, 0x03, 0x94, 0xC1, 0xF7, 0xF7, //13  Electric Guitar 2 Clean guitar with feedbackHarmonic bass
+    0x30, 0x30, 0x17, 0x06, 0xF3, 0xF1, 0xB7, 0xFC, //14  Synth Bass 2Snappy bass
+    0x31, 0x36, 0x0D, 0x05, 0xF2, 0xF4, 0x27, 0x9C, //15  Sitar Also be used as ShamisenBanjo
+    0x01, 0x01, 0x18, 0x0F, 0xDF, 0xF8, 0x6A, 0x6D, //rhythm 1
+    0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x48, //rhythm 2
+    0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55, //rhythm 3
+];
+
+//*********************************************************
+//  YMF281
+//*********************************************************
+
+opll_variant!(
+    /// The Yamaha YMF281 (OPLLP), with ymfm's copyright-free stand-in for
+    /// its instrument ROM.
+    Ymf281,
+    YMF281_INSTRUMENTS
+);
+
+// table below taken from
+// https://github.com/plgDavid/misc/wiki/Copyright-free-OPLL(x)-ROM-patches
+#[rustfmt::skip]
+const YMF281_INSTRUMENTS: [u8; OPLL_INSTRUMENT_DATA_SIZE] = [
+    // May 14th 2015 Hubert Lamontagne
+    0x72, 0x21, 0x1A, 0x07, 0xF6, 0x64, 0x01, 0x16, // Clarinet ~~ Electric String  Square wave with vibrato
+    0x00, 0x10, 0x45, 0x00, 0xF6, 0x83, 0x73, 0x63, // Synth Bass ~~ Bow wow  Triangular wave
+    0x13, 0x01, 0x96, 0x00, 0xF1, 0xF4, 0x31, 0x23, // Piano ~~ Electric Guitar  Despite of its name, same as Piano of YM2413.
+    0x71, 0x21, 0x0B, 0x0F, 0xF9, 0x64, 0x70, 0x17, // Flute ~~ Organ  Sine wave
+    0x02, 0x21, 0x1E, 0x06, 0xF9, 0x76, 0x00, 0x28, // Square Wave ~~ Clarinet  Same as ones of YM2413.
+    0x00, 0x61, 0x82, 0x0E, 0xF9, 0x61, 0x20, 0x27, // Space Oboe ~~ Saxophone  Saw wave with vibrato
+    0x21, 0x61, 0x1B, 0x07, 0x84, 0x8F, 0x10, 0x07, // Trumpet ~~ Trumpet  Same as ones of YM2413.
+    0x37, 0x32, 0xCA, 0x02, 0x66, 0x64, 0x47, 0x29, // Wow Bell ~~ Street Organ  Calliope
+    0x41, 0x41, 0x07, 0x03, 0xF5, 0x70, 0x51, 0xF5, // Electric Guitar ~~ Synth Brass  Same as Synthesizer of YM2413.
+    0x36, 0x01, 0x5E, 0x07, 0xF2, 0xF3, 0xF7, 0xF7, // Vibes ~~ Electric Piano  Simulate of Rhodes Piano
+    0x00, 0x00, 0x18, 0x06, 0xC5, 0xF3, 0x20, 0xF2, // Bass ~~ Bass  Electric bass
+    0x17, 0x81, 0x25, 0x07, 0xF7, 0xF3, 0x21, 0xF7, // Vibraphone ~~ Vibraphone Same as ones of YM2413.
+    0x35, 0x64, 0x00, 0x00, 0xFF, 0xF3, 0x77, 0xF5, // Vibrato Bell ~~ Chime  Bell
+    0x11, 0x31, 0x00, 0x07, 0xDD, 0xF3, 0xFF, 0xFB, // Click Sine ~~ Tom Tom II  Tom
+    0x3A, 0x21, 0x00, 0x07, 0x95, 0x84, 0x0F, 0xF5, // Noise and Tone ~~ Noise  for S.E.
+    0x01, 0x01, 0x18, 0x0F, 0xDF, 0xF8, 0x6A, 0x6D, //rhythm 1
+    0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x48, //rhythm 2
+    0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55, //rhythm 3
+];
+
+//*********************************************************
+//  DS1001
+//*********************************************************
+
+opll_variant!(
+    /// The Yamaha DS1001 (Konami VRC7), with ymfm's copyright-free stand-in
+    /// for its instrument ROM.
+    Ds1001,
+    DS1001_INSTRUMENTS
+);
+
+// table below taken from
+// https://github.com/plgDavid/misc/wiki/Copyright-free-OPLL(x)-ROM-patches
+#[rustfmt::skip]
+const DS1001_INSTRUMENTS: [u8; OPLL_INSTRUMENT_DATA_SIZE] = [
+    // May 15th 2015 Hubert Lamontagne & David Viens
+    0x03, 0x21, 0x05, 0x06, 0xC8, 0x81, 0x42, 0x27, // Buzzy Bell
+    0x13, 0x41, 0x14, 0x0D, 0xF8, 0xF7, 0x23, 0x12, // Guitar
+    0x31, 0x11, 0x08, 0x08, 0xFA, 0xC2, 0x28, 0x22, // Wurly
+    0x31, 0x61, 0x0C, 0x07, 0xF8, 0x64, 0x60, 0x27, // Flute
+    0x22, 0x21, 0x1E, 0x06, 0xFF, 0x76, 0x00, 0x28, // Clarinet
+    0x02, 0x01, 0x05, 0x00, 0xAC, 0xF2, 0x03, 0x02, // Synth
+    0x21, 0x61, 0x1D, 0x07, 0x82, 0x8F, 0x10, 0x07, // Trumpet
+    0x23, 0x21, 0x22, 0x17, 0xFF, 0x73, 0x00, 0x17, // Organ
+    0x15, 0x11, 0x25, 0x00, 0x41, 0x71, 0x00, 0xF1, // Bells
+    0x95, 0x01, 0x10, 0x0F, 0xB8, 0xAA, 0x50, 0x02, // Vibes
+    0x17, 0xC1, 0x5E, 0x07, 0xFA, 0xF8, 0x22, 0x12, // Vibraphone
+    0x71, 0x23, 0x11, 0x06, 0x65, 0x74, 0x10, 0x16, // Tutti
+    0x01, 0x02, 0xD3, 0x05, 0xF3, 0x92, 0x83, 0xF2, // Fretless
+    0x61, 0x63, 0x0C, 0x00, 0xA4, 0xFF, 0x30, 0x06, // Synth Bass
+    0x21, 0x62, 0x0D, 0x00, 0xA1, 0xFF, 0x50, 0x08, // Sweep
+    0x01, 0x01, 0x18, 0x0F, 0xDF, 0xF8, 0x6A, 0x6D, //rhythm 1
+    0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x48, //rhythm 2
+    0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55, //rhythm 3
+];

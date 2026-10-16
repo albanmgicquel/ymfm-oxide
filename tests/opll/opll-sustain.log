@@ -1,0 +1,60 @@
+chip ym2413
+clock 3579545
+samples 26400
+# The sustain bit (0x20-0x28 bit 5) against both EG types: a sustained
+# instrument released with and without it (RS against its own release
+# rate), a percussive one held and released with and without it (its
+# release rate during sustain, then RR or RS), and the bit toggled during
+# a release.
+0 w 0 00 1 21
+0 w 0 01 1 21
+0 w 0 02 1 10
+0 w 0 03 1 00
+0 w 0 04 1 f6
+0 w 0 05 1 f6
+0 w 0 06 1 23
+0 w 0 07 1 24
+0 w 0 30 1 00
+0 w 0 10 1 81
+0 w 0 20 1 19
+1500 w 0 20 1 09
+4000 w 0 30 1 00
+4000 w 0 10 1 81
+4000 w 0 20 1 39
+5500 w 0 20 1 29
+8000 w 0 30 1 00
+8000 w 0 10 1 81
+8000 w 0 20 1 19
+9000 w 0 20 1 09
+9300 w 0 20 1 29
+10500 w 0 20 1 09
+11300 w 0 00 1 01
+11300 w 0 01 1 01
+11300 w 0 02 1 10
+11300 w 0 03 1 00
+11300 w 0 04 1 f6
+11300 w 0 05 1 f6
+11300 w 0 06 1 23
+11300 w 0 07 1 24
+11300 w 0 30 1 00
+11300 w 0 10 1 81
+11300 w 0 20 1 19
+12800 w 0 20 1 09
+15300 w 0 30 1 00
+15300 w 0 10 1 81
+15300 w 0 20 1 39
+16800 w 0 20 1 29
+19300 w 0 30 1 00
+19300 w 0 10 1 81
+19300 w 0 20 1 19
+20300 w 0 20 1 09
+20600 w 0 20 1 29
+21800 w 0 20 1 09
+22600 w 0 31 1 10
+22600 w 0 11 1 20
+22600 w 0 21 1 39
+22600 w 0 32 1 30
+22600 w 0 12 1 50
+22600 w 0 22 1 19
+23400 w 0 21 1 29
+23400 w 0 22 1 09
