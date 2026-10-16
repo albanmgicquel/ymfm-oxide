@@ -1,0 +1,102 @@
+chip ym2149
+clock 2000000
+samples 45200
+# Tones: every channel alone across periods 0 to 0xfff (the coarse
+# register's top nibble ignored), every fixed amplitude, then all three
+# at once at different periods and levels.
+0 w 0 07 2 3f  # everything off
+0 w 0 09 2 00 0 0a 2 00 0 07 2 3e 0 08 2 0f  # channel A alone
+0 w 0 00 2 00 0 01 2 00  # period 0
+400 w 0 00 2 01 0 01 2 00  # period 1
+800 w 0 00 2 02 0 01 2 00  # period 2
+1200 w 0 00 2 03 0 01 2 00  # period 3
+1600 w 0 00 2 05 0 01 2 00  # period 5
+2000 w 0 00 2 08 0 01 2 00  # period 8
+2400 w 0 00 2 13 0 01 2 00  # period 13
+2800 w 0 00 2 40 0 01 2 00  # period 40
+3200 w 0 00 2 ff 0 01 2 00  # period ff
+3600 w 0 00 2 00 0 01 2 01  # period 100
+4000 w 0 00 2 a7 0 01 2 02  # period 2a7
+6500 w 0 00 2 ff 0 01 2 0f  # period fff
+9000 w 0 00 2 ff 0 01 2 f1  # period f1ff
+11500 w 0 00 2 20 0 01 2 00
+11500 w 0 08 2 00  # amplitude 0
+11650 w 0 08 2 e1  # amplitude 1
+11800 w 0 08 2 02  # amplitude 2
+11950 w 0 08 2 e3  # amplitude 3
+12100 w 0 08 2 04  # amplitude 4
+12250 w 0 08 2 e5  # amplitude 5
+12400 w 0 08 2 06  # amplitude 6
+12550 w 0 08 2 e7  # amplitude 7
+12700 w 0 08 2 08  # amplitude 8
+12850 w 0 08 2 e9  # amplitude 9
+13000 w 0 08 2 0a  # amplitude 10
+13150 w 0 08 2 eb  # amplitude 11
+13300 w 0 08 2 0c  # amplitude 12
+13450 w 0 08 2 ed  # amplitude 13
+13600 w 0 08 2 0e  # amplitude 14
+13750 w 0 08 2 ef  # amplitude 15
+13900 w 0 08 2 00 0 0a 2 00 0 07 2 3d 0 09 2 0f  # channel B alone
+13900 w 0 02 2 00 0 03 2 00  # period 0
+14300 w 0 02 2 01 0 03 2 00  # period 1
+14700 w 0 02 2 02 0 03 2 00  # period 2
+15100 w 0 02 2 03 0 03 2 00  # period 3
+15500 w 0 02 2 05 0 03 2 00  # period 5
+15900 w 0 02 2 08 0 03 2 00  # period 8
+16300 w 0 02 2 13 0 03 2 00  # period 13
+16700 w 0 02 2 40 0 03 2 00  # period 40
+17100 w 0 02 2 ff 0 03 2 00  # period ff
+17500 w 0 02 2 00 0 03 2 01  # period 100
+17900 w 0 02 2 a7 0 03 2 02  # period 2a7
+20400 w 0 02 2 ff 0 03 2 0f  # period fff
+22900 w 0 02 2 ff 0 03 2 f1  # period f1ff
+25400 w 0 02 2 20 0 03 2 00
+25400 w 0 09 2 00  # amplitude 0
+25550 w 0 09 2 e1  # amplitude 1
+25700 w 0 09 2 02  # amplitude 2
+25850 w 0 09 2 e3  # amplitude 3
+26000 w 0 09 2 04  # amplitude 4
+26150 w 0 09 2 e5  # amplitude 5
+26300 w 0 09 2 06  # amplitude 6
+26450 w 0 09 2 e7  # amplitude 7
+26600 w 0 09 2 08  # amplitude 8
+26750 w 0 09 2 e9  # amplitude 9
+26900 w 0 09 2 0a  # amplitude 10
+27050 w 0 09 2 eb  # amplitude 11
+27200 w 0 09 2 0c  # amplitude 12
+27350 w 0 09 2 ed  # amplitude 13
+27500 w 0 09 2 0e  # amplitude 14
+27650 w 0 09 2 ef  # amplitude 15
+27800 w 0 08 2 00 0 09 2 00 0 07 2 3b 0 0a 2 0f  # channel C alone
+27800 w 0 04 2 00 0 05 2 00  # period 0
+28200 w 0 04 2 01 0 05 2 00  # period 1
+28600 w 0 04 2 02 0 05 2 00  # period 2
+29000 w 0 04 2 03 0 05 2 00  # period 3
+29400 w 0 04 2 05 0 05 2 00  # period 5
+29800 w 0 04 2 08 0 05 2 00  # period 8
+30200 w 0 04 2 13 0 05 2 00  # period 13
+30600 w 0 04 2 40 0 05 2 00  # period 40
+31000 w 0 04 2 ff 0 05 2 00  # period ff
+31400 w 0 04 2 00 0 05 2 01  # period 100
+31800 w 0 04 2 a7 0 05 2 02  # period 2a7
+34300 w 0 04 2 ff 0 05 2 0f  # period fff
+36800 w 0 04 2 ff 0 05 2 f1  # period f1ff
+39300 w 0 04 2 20 0 05 2 00
+39300 w 0 0a 2 00  # amplitude 0
+39450 w 0 0a 2 e1  # amplitude 1
+39600 w 0 0a 2 02  # amplitude 2
+39750 w 0 0a 2 e3  # amplitude 3
+39900 w 0 0a 2 04  # amplitude 4
+40050 w 0 0a 2 e5  # amplitude 5
+40200 w 0 0a 2 06  # amplitude 6
+40350 w 0 0a 2 e7  # amplitude 7
+40500 w 0 0a 2 08  # amplitude 8
+40650 w 0 0a 2 e9  # amplitude 9
+40800 w 0 0a 2 0a  # amplitude 10
+40950 w 0 0a 2 eb  # amplitude 11
+41100 w 0 0a 2 0c  # amplitude 12
+41250 w 0 0a 2 ed  # amplitude 13
+41400 w 0 0a 2 0e  # amplitude 14
+41550 w 0 0a 2 ef  # amplitude 15
+41700 w 0 00 2 31 0 01 2 00 0 02 2 52 0 03 2 00 0 04 2 a3 0 05 2 01 0 08 2 0f 0 09 2 0a 0 0a 2 05 0 07 2 38  # all three
+44700 w 0 07 2 3f  # tones off at a level: a constant

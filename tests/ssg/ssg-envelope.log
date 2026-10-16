@@ -1,0 +1,35 @@
+chip ym2149
+clock 2000000
+samples 35440
+# The envelope: every shape 0 to 15 on all three channels at a short
+# period, a shape rewritten mid-cycle (which restarts it), periods 0, 1
+# and long ones through both period bytes, the envelope gated by tones
+# and noise, and a channel leaving and rejoining the envelope.
+0 w 0 07 2 3f 0 08 2 10 0 09 2 1f 0 0a 2 10 0 0b 2 03 0 0c 2 00
+0 w 0 0d 2 00  # shape 0
+700 w 0 0d 2 f1  # shape 1
+1400 w 0 0d 2 02  # shape 2
+2100 w 0 0d 2 f3  # shape 3
+2800 w 0 0d 2 04  # shape 4
+3500 w 0 0d 2 f5  # shape 5
+4200 w 0 0d 2 06  # shape 6
+4900 w 0 0d 2 f7  # shape 7
+5600 w 0 0d 2 08  # shape 8
+6300 w 0 0d 2 f9  # shape 9
+7000 w 0 0d 2 0a  # shape 10
+7700 w 0 0d 2 fb  # shape 11
+8400 w 0 0d 2 0c  # shape 12
+9100 w 0 0d 2 fd  # shape 13
+9800 w 0 0d 2 0e  # shape 14
+10500 w 0 0d 2 ff  # shape 15
+11200 w 0 0b 2 02 0 0d 2 0e  # triangle
+11290 w 0 0d 2 0e  # rewritten mid-cycle
+11340 w 0 0d 2 0a
+11640 w 0 0b 2 00 0 0c 2 00 0 0d 2 0c  # period 0
+12340 w 0 0b 2 01 0 0c 2 00 0 0d 2 0c  # period 1
+13040 w 0 0b 2 00 0 0c 2 01 0 0d 2 0c  # period 100
+22040 w 0 0b 2 23 0 0c 2 01 0 0d 2 0c  # period 123
+31040 w 0 0b 2 05 0 0c 2 00 0 0d 2 08 0 00 2 07 0 02 2 0b 0 04 2 00 0 05 2 00 0 06 2 06 0 07 2 1c  # gated
+33040 w 0 09 2 0f  # B leaves the envelope
+33840 w 0 09 2 15  # and rejoins it
+34640 w 0 0d 2 04  # attack then silence
