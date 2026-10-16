@@ -1,0 +1,62 @@
+chip ymf278b
+clock 33868800
+samples 20000
+mem pcm wavetable.bin
+# The wave table headers. Wave 8 sets every register byte (LFO and vibrato,
+# attack and decay, sustain, rate correction and release, AM), which the
+# data port reads back; wave 7 starts high in memory and has a rate
+# correction. The ninth wave table bit, in register 0x20, selects 384, 385
+# and 511, whose headers are at 12 times their number while the wave table
+# header field is 0; with the field at 1 (register 2 bits 2-4), 384 and 385
+# read their headers from 0x80000; at 2, past the image, a header of zeros
+# plays memory from address 0 as 8-bit samples. A wave table number
+# written again during a note reloads the header and restarts the
+# envelope at silence while the key stays on: mid-attack the attack goes
+# on from there, and past the attack the note stays silent until it is
+# keyed on again. Register 2 reads back with
+# the device ID bit 5 set.
+0 w 2 05 3 03  # NEW and NEW2: OPL4 mode
+0 w 4 20 5 00 4 38 5 04 4 50 5 01 4 08 5 08 4 68 5 80  # ch 0: wave 8
+10 w 4 80
+10 r 5
+10 w 4 98
+10 r 5
+10 w 4 b0
+10 r 5
+10 w 4 c8
+10 r 5
+10 w 4 e0
+10 r 5
+10 w 4 02
+10 r 5
+500 w 4 2b 5 00 4 43 5 02 4 5b 5 01 4 13 5 02 4 73 5 00 4 a3 5 50 4 73 5 80  # ch 11: wave 2 with a slow attack
+800 w 4 13 5 02  # reloaded mid-attack: the attack goes on from silence at the header's rate
+1400 w 4 73 5 00
+1500 w 4 68 5 00
+2000 w 4 21 5 00 4 39 5 10 4 51 5 01 4 09 5 07 4 69 5 80  # ch 1: wave 7, high in memory
+3500 w 4 69 5 00
+4000 w 4 22 5 01 4 3a 5 10 4 52 5 01 4 0a 5 80 4 6a 5 80  # ch 2: wave 384, bank field 0
+5500 w 4 6a 5 00
+6000 w 4 23 5 01 4 3b 5 04 4 53 5 01 4 0b 5 81 4 6b 5 80  # ch 3: wave 385
+7500 w 4 6b 5 00
+8000 w 4 24 5 01 4 3c 5 02 4 54 5 01 4 0c 5 ff 4 6c 5 80  # ch 4: wave 511
+9500 w 4 6c 5 00
+10000 w 4 02 5 04  # wave table header field 1
+10000 w 4 02
+10000 r 5
+10000 w 4 25 5 01 4 3d 5 02 4 55 5 01 4 0d 5 80 4 6d 5 80  # ch 5: wave 384, from 0x80000
+11500 w 4 6d 5 00
+12000 w 4 26 5 01 4 3e 5 10 4 56 5 01 4 0e 5 81 4 6e 5 80  # ch 6: wave 385, from 0x8000c
+13500 w 4 6e 5 00
+14000 w 4 27 5 00 4 3f 5 02 4 57 5 01 4 0f 5 02 4 6f 5 80  # ch 7: wave 2, below 384: the field does not apply
+15000 w 4 6f 5 00
+15200 w 4 02 5 08  # wave table header field 2: past the image
+15200 w 4 28 5 01 4 40 5 10 4 58 5 41 4 10 5 90 4 70 5 80
+16200 w 4 70 5 00
+16400 w 4 02 5 00
+16400 w 4 29 5 00 4 41 5 10 4 59 5 01 4 11 5 00 4 71 5 80  # ch 9: wave 0, then reloaded as wave 2 and 1 under the key
+17000 w 4 11 5 02  # reloaded: silent, as the envelope is past its attack
+17600 w 4 71 5 00
+17800 w 4 71 5 80  # keyed on again: wave 2 sounds
+18600 w 4 29 5 00 4 11 5 01  # reloaded as wave 1, silent again
+19400 w 4 71 5 00

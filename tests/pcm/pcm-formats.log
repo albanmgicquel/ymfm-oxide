@@ -1,0 +1,20 @@
+chip ymf278b
+clock 33868800
+samples 16000
+mem pcm wavetable.bin
+# The sample formats, one channel each, keyed on in turn at full level with
+# level direct and centre pan: wave 0 (8-bit triangle), wave 1 (12-bit
+# sawtooth, both halves of each three-byte pair), wave 2 (16-bit), and wave
+# 4, the fourth format code, which ymfm reads as 12-bit. Then all four at
+# once on four channels at other pitches.
+0 w 2 05 3 03  # NEW and NEW2: OPL4 mode
+0 w 4 20 5 00 4 38 5 10 4 50 5 01 4 08 5 00 4 68 5 80  # ch 0: wave 0, octave 1, F-number 0 (one sample per output)
+2500 w 4 68 5 00
+3200 w 4 21 5 00 4 39 5 04 4 51 5 01 4 09 5 01 4 69 5 80  # ch 1: wave 1, octave 0, F-number 0x200
+5700 w 4 69 5 00
+6400 w 4 22 5 00 4 3a 5 02 4 52 5 01 4 0a 5 02 4 6a 5 80  # ch 2: wave 2
+8900 w 4 6a 5 00
+9600 w 4 23 5 00 4 3b 5 05 4 53 5 01 4 0b 5 04 4 6b 5 80  # ch 3: wave 4, format code 3
+12100 w 4 6b 5 00
+12800 w 4 24 5 aa 4 3c 5 22 4 54 5 01 4 0c 5 00 4 6c 5 80 4 25 5 54 4 3d 5 11 4 55 5 01 4 0d 5 01 4 6d 5 80 4 26 5 fe 4 3e 5 f7 4 56 5 01 4 0e 5 02 4 6e 5 80 4 27 5 00 4 3f 5 16 4 57 5 01 4 0f 5 04 4 6f 5 80
+15000 w 4 6c 5 00 4 6d 5 00 4 6e 5 00 4 6f 5 00

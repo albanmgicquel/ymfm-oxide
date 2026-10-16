@@ -1,0 +1,48 @@
+chip ymf278b
+clock 33868800
+samples 40000
+mem pcm wavetable.bin
+# The envelope, on wave 2 under registers written after the header load:
+# a slow attack, decay to a sustain level and a sustain rate, release at
+# several rates, attack rate 0 (never sounds), an attack corrected to rate
+# 62 (only 63 starts at full level), the sustain level 15 (which
+# means 31), rate correction from 0 to 14 at several octaves (with the
+# F-number's top bit) against 15 (none), a key on and off in the same
+# write burst (ymfm keeps the key on), a second key on while on (no
+# restart), a key on during the release (attack from where it is), and
+# pseudo-reverb, which from -18dB, in any state but the attack, holds the
+# envelope to a fixed slow rate: on channel 10 (on DO1) for the whole log,
+# and on channels 5 and 6 in their releases.
+0 w 2 05 3 03  # NEW and NEW2: OPL4 mode
+0 w 4 2a 5 00 4 42 5 02 4 5a 5 01 4 12 5 02 4 72 5 00 4 a2 5 fa 4 ba 5 4a 4 d2 5 f4 4 42 5 0a 4 72 5 90  # ch 10 on DO1: pseudo-reverb under the key
+0 w 4 20 5 00 4 38 5 02 4 50 5 01 4 08 5 02 4 68 5 00 4 98 5 97 4 b0 5 64 4 c8 5 f9 4 68 5 80  # ch 0: AR 9, DR 7, SL 6, SR 4, RR 9
+3500 w 4 68 5 00
+6000 w 4 21 5 00 4 39 5 02 4 51 5 01 4 09 5 02 4 69 5 00 4 99 5 ca 4 b1 5 f0 4 c9 5 fb 4 69 5 80  # ch 1: SL 15
+8000 w 4 69 5 00
+9000 w 4 22 5 00 4 3a 5 02 4 52 5 01 4 0a 5 02 4 6a 5 00 4 9a 5 00 4 b2 5 00 4 ca 5 fc 4 6a 5 80  # ch 2: AR 0
+9000 w 4 27 5 00 4 3f 5 02 4 57 5 01 4 0f 5 02 4 6f 5 00 4 9f 5 e0 4 b7 5 00 4 cf 5 3c 4 6f 5 80  # ch 7: AR 14 corrected to 62: a gradual attack
+9800 w 4 6f 5 00
+10000 w 4 6a 5 00
+10500 w 4 23 5 00 4 3b 5 02 4 53 5 01 4 0b 5 02 4 6b 5 00 4 9b 5 76 4 b3 5 43 4 cb 5 06 4 6b 5 80  # ch 3: rate correction 0, octave 0
+12300 w 4 6b 5 00
+13500 w 4 23 5 00 4 3b 5 26 4 53 5 01 4 0b 5 02 4 6b 5 00 4 9b 5 76 4 b3 5 43 4 cb 5 36 4 6b 5 80  # ch 3: rate correction 3, octave 2
+15300 w 4 6b 5 00
+16500 w 4 23 5 00 4 3b 5 d0 4 53 5 01 4 0b 5 02 4 6b 5 00 4 9b 5 76 4 b3 5 43 4 cb 5 76 4 6b 5 80  # ch 3: rate correction 7, octave -3
+18300 w 4 6b 5 00
+19500 w 4 23 5 fe 4 3b 5 57 4 53 5 01 4 0b 5 02 4 6b 5 00 4 9b 5 76 4 b3 5 43 4 cb 5 e6 4 6b 5 80  # ch 3: rate correction 14, octave 5
+21300 w 4 6b 5 00
+22500 w 4 23 5 00 4 3b 5 84 4 53 5 01 4 0b 5 02 4 6b 5 00 4 9b 5 76 4 b3 5 43 4 cb 5 06 4 6b 5 80  # ch 3: rate correction 0, octave -8
+24300 w 4 6b 5 00
+25500 w 4 23 5 fe 4 3b 5 57 4 53 5 01 4 0b 5 02 4 6b 5 00 4 9b 5 76 4 b3 5 43 4 cb 5 f6 4 6b 5 80  # ch 3: rate correction 15, octave 5
+27300 w 4 6b 5 00
+28500 w 4 24 5 00 4 3c 5 02 4 54 5 01 4 0c 5 02 4 6c 5 00 4 9c 5 f4 4 b4 5 32 4 cc 5 f8 4 6c 5 80 4 6c 5 00  # ch 4: key on and off at once
+29000 w 4 42 5 02  # channel 10 loses its reverb bit, but not its reverb state
+29700 w 4 6c 5 80  # a second key on
+30000 w 4 72 5 10  # channel 10 keyed off: it stays in reverb
+30500 w 4 6c 5 00
+30900 w 4 6c 5 80  # key on during the release
+32100 w 4 6c 5 00
+33000 w 4 25 5 00 4 3d 5 02 4 55 5 01 4 0d 5 02 4 6d 5 00 4 9d 5 f5 4 b5 5 23 4 cd 5 f7 4 3d 5 0a 4 6d 5 80  # ch 5: pseudo-reverb
+34500 w 4 6d 5 00
+39000 w 4 26 5 00 4 3e 5 02 4 56 5 01 4 0e 5 02 4 6e 5 00 4 9e 5 f0 4 b6 5 00 4 ce 5 f4 4 3e 5 0a 4 6e 5 80  # ch 6: reverb in release
+39500 w 4 6e 5 00
