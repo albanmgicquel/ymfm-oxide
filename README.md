@@ -78,7 +78,7 @@ IRQ line after every sample, every status read, and every external write.
 - **Golden renders.** `tests/<family>/` holds synthetic register logs, each
   with a golden render made by the original C++: 17 for the OPL, 12 for the
   OPLL, 1 for the YMF289B, 8 for the Y8950 and 4 for the ADPCM engines
-  alone, 12 for the OPL4, 13 for the OPM, 16 for the OPN, 14 for the OPQ,
+  alone, 12 for the OPL4, 13 for the OPM, 19 for the OPN, 14 for the OPQ,
   16 for the OPZ and 5 for the SSG. `cargo test` replays every log and
   compares everything; a mismatch reports the first difference, the
   commands that led to it and the register file at that point. Memory

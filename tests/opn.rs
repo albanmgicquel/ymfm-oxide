@@ -10,9 +10,9 @@
 //! SSG-EG shape, channel 3's special mode with its frequency latches and
 //! CSM, the LFO at every rate and sensitivity with the OPN PM adjustment,
 //! detune and multiple across the key codes, the DAC on channel 6, panning,
-//! per-operator key-on, a loud chip, and the timers with status, busy and
-//! IRQ. The DAC and loud cases run on all three chips, where their outputs
-//! differ: the YM2612's discontinuity ("ladder effect"), the YM3438's
+//! per-operator key-on, a loud chip and one at full clip, past 16 bits, and
+//! the timers with status, busy and IRQ. The DAC, loud and clip cases run on
+//! all three chips, where their outputs differ: the YM2612's discontinuity ("ladder effect"), the YM3438's
 //! 9-bit sum and the YMF276's 14-bit one.
 //!
 //! With `YMFM_ORACLE` naming a built oracle, a randomized comparison runs as
@@ -107,6 +107,39 @@ fn matches_ymfm_when_every_channel_is_loud_on_each_chip() {
 }
 
 #[test]
+fn matches_ymfm_at_full_clip_on_each_chip() {
+    check("opn2-clip");
+    check("ym3438-clip");
+    check("ymf276-clip");
+}
+
+/// Returns the smallest and largest output of a golden.
+fn extremes(name: &str) -> (i32, i32) {
+    let log = common::read_log("opn", name);
+    let golden = std::fs::read(common::directory("opn").join(format!("{name}.golden")))
+        .expect("the golden reads");
+    let render = common::decode(&golden, 2, log.samples as usize).expect("the golden decodes");
+    let low = render.samples.iter().copied().min().unwrap();
+    let high = render.samples.iter().copied().max().unwrap();
+    (low, high)
+}
+
+#[test]
+fn reaches_past_16_bits_at_full_clip_as_ymfm_does() {
+    // what the clip logs hold, and so what the chips are held to: the
+    // YM2612's six clipped channels sum to +32768, the YM3438's to -32896
+    // and +32768, and the YMF276 clamps its 14-bit sum inside 16 bits
+    for name in ["opn2-clip", "opn2-loud"] {
+        assert_eq!(extremes(name), (-32768, 32768), "{name}");
+    }
+    for name in ["ym3438-clip", "ym3438-loud"] {
+        assert_eq!(extremes(name), (-32896, 32768), "{name}");
+    }
+    let (low, high) = extremes("ymf276-clip");
+    assert!(low >= -32768 && high <= 32767);
+}
+
+#[test]
 fn resets_to_the_state_a_new_chip_starts_in() {
     let log = common::read_log("opn", "opn2-ch3");
     let writes: Vec<(u32, u8)> = log
@@ -150,24 +183,11 @@ fn runs_at_the_clock_over_144() {
 /// Writes a random OPN2 log: bursts of writes to every register in both
 /// banks, biased towards key-ons and audible levels, with the frequency
 /// latches, channel 3's modes, the timers and CSM, the LFO, the DAC,
-/// mismatched address and data ports, and status reads mixed in.
-///
-/// On the YM2612 and YM3438 one channel, chosen per log, is kept off both
-/// outputs: with all six channels clipped at once those chips reach
-/// +32768 (and the YM3438 down to -32896), which ymfm produces but the
-/// oracle's 16-bit format cannot record.
+/// mismatched address and data ports, and status reads mixed in. Every
+/// channel can reach both outputs, so the logs clip as far as the chips do.
 fn random_log(seed: u64, chip: &str, samples: u32) -> String {
     let mut random = Random::new(seed);
     let mut text = format!("chip {chip}\nclock 7670453\nsamples {samples}\n");
-    let muted = if chip == "ymf276" {
-        None
-    } else {
-        Some(random.below(6))
-    };
-    if let Some(m) = muted {
-        let port = 2 * (m / 3);
-        let _ = writeln!(text, "0 w {port:x} {:02x} {:x} 00", 0xb4 + m % 3, port + 1);
-    }
     let mut sample = 0u32;
     while sample < samples {
         let burst = 1 + random.below(32);
@@ -215,10 +235,6 @@ fn random_log(seed: u64, chip: &str, samples: u32) -> String {
                     continue;
                 }
                 _ => (0x28, random.next() & 0xf7),
-            };
-            let value = match muted {
-                Some(m) if register == (0x100 * (m / 3)) | (0xb4 + m % 3) => value & 0x3f,
-                _ => value,
             };
             let port = if register & 0x100 != 0 { 2 } else { 0 };
             let _ = writeln!(
