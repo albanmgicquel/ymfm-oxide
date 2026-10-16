@@ -1,0 +1,25 @@
+chip ym2608
+clock 7987200
+samples 12000
+ssg-override
+mem adpcm-a opna-rhythm.bin
+fidelity min
+# An SSG override on the YM2608: told of the prescale and reset as the chip
+# is made, it takes the SSG writes and reads; prescale writes and a
+# fidelity change tell it again; the SSG output stays 0 and FM and rhythm
+# play on.
+0 w 0 29 1 80 0 11 1 38 0 18 1 df 0 10 1 01
+0 w 2 30 3 01 2 40 3 7f 2 50 3 1f 2 60 3 06 2 70 3 02 2 80 3 36 2 90 3 00 2 34 3 01 2 44 3 1c 2 54 3 1f 2 64 3 06 2 74 3 02 2 84 3 36 2 94 3 00 2 38 3 01 2 48 3 7f 2 58 3 1f 2 68 3 06 2 78 3 02 2 88 3 36 2 98 3 00 2 3c 3 01 2 4c 3 22 2 5c 3 1f 2 6c 3 06 2 7c 3 02 2 8c 3 36 2 9c 3 00 2 b0 3 07 2 b4 3 c0 2 a4 3 22 2 a0 3 c0
+0 w 0 28 1 f4
+0 w 0 00 1 60 0 01 1 00 0 02 1 48 0 03 1 00 0 04 1 3a 0 05 1 00 0 06 1 0c 0 07 1 38 0 08 1 0c 0 09 1 0a 0 0a 1 08
+11 w 0 01
+11 r 1
+17 w 0 07
+17 r 1
+19 w 0 09
+19 r 1
+24 w 0 0e
+24 r 1
+3000 w 0 2e
+5000 w 0 2f
+7000 f max

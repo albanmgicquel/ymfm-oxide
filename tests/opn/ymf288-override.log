@@ -1,0 +1,22 @@
+chip ymf288
+clock 15974400
+samples 8000
+ssg-override
+fidelity min
+# An SSG override on the YMF288, which has no prescale to tell it of: reset
+# as the chip is made, it takes the SSG writes and the reads below 0x0E
+# (0x0E and 0x0F read 0xFF without it); the SSG output stays 0.
+0 w 0 31 1 01 0 41 1 7f 0 51 1 1f 0 61 1 06 0 71 1 02 0 81 1 36 0 91 1 00 0 35 1 01 0 45 1 7f 0 55 1 1f 0 65 1 06 0 75 1 02 0 85 1 36 0 95 1 00 0 39 1 01 0 49 1 1a 0 59 1 1f 0 69 1 06 0 79 1 02 0 89 1 36 0 99 1 00 0 3d 1 01 0 4d 1 7f 0 5d 1 1f 0 6d 1 06 0 7d 1 02 0 8d 1 36 0 9d 1 00 0 b1 1 07 0 b5 1 c0 0 a5 1 2a 0 a1 1 20
+0 w 0 28 1 f1
+0 w 0 00 1 60 0 01 1 00 0 02 1 48 0 03 1 00 0 04 1 3a 0 05 1 00 0 06 1 0c 0 07 1 38 0 08 1 0c 0 09 1 0a 0 0a 1 08
+10 w 0 00
+10 r 1
+17 w 0 07
+17 r 1
+23 w 0 0d
+23 r 1
+24 w 0 0e
+24 r 1
+25 w 0 0f
+25 r 1
+4000 f max

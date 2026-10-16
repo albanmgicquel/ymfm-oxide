@@ -1,0 +1,46 @@
+chip ym2610
+clock 8000000
+samples 30000
+mem adpcm-a ym2610-a.bin
+fidelity min
+# ADPCM-A from external memory in 256-byte units, at the minimum fidelity:
+# each channel's start and end addresses, level and pan, keyed in turn and
+# together, the total level, a dump, and the end-of-sample flags in the
+# extended status, masked and reset through 0x1C.
+0 w 2 01 3 3f
+0 w 2 10 3 00 2 18 3 00 2 20 3 07 2 28 3 00 2 08 3 df
+0 w 2 11 3 08 2 19 3 00 2 21 3 0d 2 29 3 00 2 09 3 9f
+0 w 2 12 3 10 2 1a 3 00 2 22 3 13 2 2a 3 00 2 0a 3 5f
+0 w 2 13 3 18 2 1b 3 00 2 23 3 1f 2 2b 3 00 2 0b 3 dc
+0 w 2 14 3 20 2 1c 3 00 2 24 3 22 2 2c 3 00 2 0c 3 d8
+0 w 2 15 3 28 2 1d 3 00 2 25 3 2e 2 2d 3 00 2 0d 3 df
+0 w 2 00 3 01
+2500 r 2
+3000 w 2 00 3 02
+5500 r 2
+6000 w 2 00 3 04
+8500 r 2
+9000 w 2 00 3 08
+11500 r 2
+12000 w 2 00 3 10
+14500 r 2
+15000 w 2 00 3 20
+17500 r 2
+18000 w 2 00 3 3f  # all six
+18500 r 2
+19500 r 2
+20000 w 0 1c 1 05  # mask and reset channels 1 and 3's flags
+20500 r 2
+21000 w 0 1c 1 00
+21500 r 2
+22000 w 2 01 3 30 2 00 3 3f
+22500 r 2
+23000 w 2 00 3 9a  # dump four
+23500 r 2
+24500 r 2
+25500 r 2
+26000 w 2 20 3 40 2 00 3 01  # a span past the image's end reads 0
+26500 r 2
+27500 r 2
+28500 r 2
+29500 r 2

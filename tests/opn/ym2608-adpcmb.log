@@ -1,0 +1,61 @@
+chip ym2608
+clock 7987200
+samples 36000
+mem adpcm-b opn-b.bin
+fidelity min
+# ADPCM-B from memory, at the minimum fidelity: the sine played once with
+# end of sample, its status bits read through the extended status, masked
+# by the flag control at 0x110, the IRQ enable at 0x29, a flag reset
+# through 0x110's top bit, repeat over the ramp, both pans, the level, a
+# playback at 8-bit DRAM granularity, and the reset bit.
+0 w 0 29 1 84 2 10 3 00  # the EOS IRQ on, nothing masked
+0 w 2 01 3 c0 2 02 3 00 2 03 3 00 2 04 3 ff 2 05 3 00 2 09 3 00 2 0a 3 c0 2 0b 3 c0 2 00 3 a0  # the sine's first 1 KB, once
+100 r 2
+550 r 2
+1000 r 2
+1450 r 2
+1900 r 2
+2350 r 2
+2800 r 2
+3250 r 2
+3700 r 2
+4150 r 2
+4600 r 2
+5050 r 2
+5500 r 2
+5950 r 2
+6000 w 2 10 3 04  # mask EOS
+6000 r 2
+6400 r 2
+6850 r 2
+7300 r 2
+7750 r 2
+8000 w 2 10 3 80  # reset the flags
+8000 r 2
+8200 r 2
+8650 r 2
+9000 w 2 10 3 00 0 29 1 8c  # BRDY too
+9100 r 2
+9550 r 2
+10000 r 2
+10450 r 2
+10900 r 2
+11350 r 2
+11800 r 2
+12000 w 2 01 3 80 2 02 3 00 2 03 3 04 2 04 3 7f 2 05 3 05 2 0a 3 a0 2 00 3 b0  # the ramp, repeating, left only
+18000 w 2 01 3 40 2 0b 3 ff  # right only, full level
+18000 r 2
+22000 w 2 01 3 c2 2 02 3 80 2 03 3 01 2 04 3 ff 2 05 3 01 2 09 3 80 2 0a 3 40 2 00 3 a0  # 8-bit DRAM: 32-byte units, the chirp
+22100 r 2
+23600 r 2
+25100 r 2
+26600 r 2
+28100 r 2
+29600 r 2
+30000 w 2 00 3 01  # reset
+30000 r 2
+31000 w 2 01 3 c0 2 02 3 00 2 03 3 08 2 04 3 ff 2 05 3 0b 2 00 3 a0  # the square, loud enough to clamp
+31100 r 2
+32600 r 2
+34100 r 2
+35600 r 2

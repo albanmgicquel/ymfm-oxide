@@ -1,0 +1,53 @@
+chip ym2203
+clock 3993600
+samples 20000
+fidelity min
+# Timers, status, busy and the IRQ line at the minimum fidelity: timer A at
+# two values and timer B, loaded and enabled, their flags reset through
+# 0x27, status reads right after writes (busy) and later, timer A's CSM
+# key-on of channel 3, and the timers at prescale 2.
+0 w 0 32 1 01 0 42 1 7f 0 52 1 1f 0 62 1 06 0 72 1 02 0 82 1 3f 0 92 1 00 0 36 1 01 0 46 1 7f 0 56 1 1f 0 66 1 06 0 76 1 02 0 86 1 3f 0 96 1 00 0 3a 1 01 0 4a 1 7f 0 5a 1 1f 0 6a 1 06 0 7a 1 02 0 8a 1 3f 0 9a 1 00 0 3e 1 01 0 4e 1 18 0 5e 1 1f 0 6e 1 06 0 7e 1 02 0 8e 1 3f 0 9e 1 00 0 b2 1 07 0 a6 1 2a 0 a2 1 00
+10 w 0 24 1 f0 0 25 1 02 0 26 1 c0 0 27 1 0f  # both timers loaded and enabled
+10 r 0  # busy after the write
+300 r 0
+1000 r 0
+1700 r 0
+2000 r 1  # the data port, at an FM address, reads 0
+2400 r 0
+3000 w 0 27 1 3f  # reset both flags
+3000 r 0
+3100 r 0
+3800 r 0
+4500 r 0
+5200 r 0
+5900 r 0
+6000 w 0 24 1 ff 0 25 1 03 0 27 1 85  # CSM: timer A keys channel 3
+6100 r 0
+6550 r 0
+7000 r 0
+7450 r 0
+7900 r 0
+8350 r 0
+8800 r 0
+9250 r 0
+9700 r 0
+10000 w 0 27 1 0a  # timer B alone
+12000 w 0 2f  # prescale 2: the timers run faster
+12100 r 0
+12900 r 0
+13700 r 0
+14500 r 0
+15300 r 0
+16000 w 0 27 1 30  # flags reset, timers stopped
+16000 r 0
+16100 r 0
+16900 r 0
+17700 r 0
+18000 f max  # 4 clocks a sample: busy to the clock
+18000 w 0 2d  # prescale 6
+18100 w 0 30 1 01
+18146 r 0
+18147 r 0
+18148 r 0
+18500 r 0
+19300 r 0

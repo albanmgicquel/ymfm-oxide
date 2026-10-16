@@ -1,0 +1,22 @@
+chip ym2610
+clock 8000000
+samples 8000
+ssg-override
+mem adpcm-a ym2610-a.bin
+fidelity min
+# An SSG override on the YM2610: reset as the chip is made, it takes the
+# SSG writes and the reads below 0x0E; the SSG output stays 0 while FM and
+# ADPCM-A play.
+0 w 2 01 3 3f 2 10 3 00 2 18 3 00 2 20 3 07 2 28 3 00 2 08 3 df 2 00 3 01
+0 w 0 32 1 01 0 42 1 7f 0 52 1 1f 0 62 1 06 0 72 1 02 0 82 1 36 0 92 1 00 0 36 1 01 0 46 1 7f 0 56 1 1f 0 66 1 06 0 76 1 02 0 86 1 36 0 96 1 00 0 3a 1 01 0 4a 1 7f 0 5a 1 1f 0 6a 1 06 0 7a 1 02 0 8a 1 36 0 9a 1 00 0 3e 1 01 0 4e 1 1c 0 5e 1 1f 0 6e 1 06 0 7e 1 02 0 8e 1 36 0 9e 1 00 0 b2 1 07 0 b6 1 c0 0 a6 1 22 0 a2 1 60
+0 w 0 28 1 f2
+0 w 0 00 1 60 0 01 1 00 0 02 1 48 0 03 1 00 0 04 1 3a 0 05 1 00 0 06 1 0c 0 07 1 38 0 08 1 0c 0 09 1 0a 0 0a 1 08
+10 w 0 00
+10 r 1
+17 w 0 07
+17 r 1
+23 w 0 0d
+23 r 1
+24 w 0 0e
+24 r 1
+4000 f max

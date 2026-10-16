@@ -1,0 +1,66 @@
+chip ym2610
+clock 8000000
+samples 30000
+mem adpcm-b opn-b.bin
+fidelity min
+# ADPCM-B on the YM2610, in 256-byte units, which forces external mode and
+# refuses recording: the sine once, its end-of-sample flag in bit 7 of the
+# extended status, reset and masked through 0x1C, the ramp repeating, a
+# write asking for CPU playback and recording (both refused), and the
+# level and pan.
+0 w 0 11 1 c0 0 12 1 00 0 13 1 00 0 14 1 03 0 15 1 00 0 19 1 00 0 1a 1 c0 0 1b 1 d0 0 10 1 80
+200 r 2
+800 r 2
+1400 r 2
+2000 r 2
+2600 r 2
+3200 r 2
+3800 r 2
+4400 r 2
+5000 r 2
+5600 r 2
+6200 r 2
+6800 r 2
+7400 r 2
+8000 r 2
+8600 r 2
+9000 w 0 1c 1 80  # reset and mask the ADPCM-B flag
+9200 r 2
+9500 w 0 1c 1 00
+9800 r 2
+10000 w 0 11 1 80 0 12 1 10 0 13 1 00 0 14 1 1f 0 15 1 00 0 1a 1 90 0 10 1 90  # the ramp, repeating, left
+10400 r 2
+11000 r 2
+11600 r 2
+12200 r 2
+12800 r 2
+13400 r 2
+14000 r 2
+14600 r 2
+15200 r 2
+15800 r 2
+16400 r 2
+17000 r 2
+17600 r 2
+18000 w 0 10 1 40 0 18 1 55  # record asked: refused, external forced
+18200 r 2
+18800 r 2
+19000 w 0 11 1 40 0 12 1 30 0 13 1 00 0 14 1 3f 0 15 1 00 0 10 1 00 0 10 1 80  # the chirp, right
+19400 r 2
+20000 r 2
+20600 r 2
+21200 r 2
+21800 r 2
+22400 r 2
+23000 r 2
+23600 r 2
+24200 r 2
+24800 r 2
+25400 r 2
+26000 r 2
+26600 r 2
+27200 r 2
+27800 r 2
+28400 r 2
+29000 r 2
+29600 r 2

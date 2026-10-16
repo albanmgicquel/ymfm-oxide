@@ -1,0 +1,68 @@
+chip ym2203
+clock 3993600
+samples 6000
+mem io opn-io.bin
+fidelity min
+# The SSG's I/O ports through the interface: register 7's direction bits,
+# writes to ports A and B as outputs (external writes) and as inputs, reads
+# of each port both ways (an input reads the image), the read-back of every
+# SSG register through the data port, and the ID-less data port above 0x0F;
+# a tone keeps the render from being silent.
+0 w 0 00 1 40 0 01 1 00 0 02 1 00 0 03 1 00 0 04 1 00 0 05 1 00 0 06 1 0c 0 07 1 3e 0 08 1 0c 0 09 1 00 0 0a 1 00
+10 w 0 0e 1 11 0 0f 1 22  # both inputs: stored only
+20 w 0 07 1 3e 0 0e 1 14 0 0f 1 15
+21 w 0 0e
+21 r 1
+22 w 0 0f
+22 r 1
+40 w 0 07 1 7e 0 0e 1 28 0 0f 1 29
+41 w 0 0e
+41 r 1
+42 w 0 0f
+42 r 1
+60 w 0 07 1 be 0 0e 1 3c 0 0f 1 3d
+61 w 0 0e
+61 r 1
+62 w 0 0f
+62 r 1
+80 w 0 07 1 fe 0 0e 1 50 0 0f 1 51
+81 w 0 0e
+81 r 1
+82 w 0 0f
+82 r 1
+200 w 0 00
+200 r 1
+201 w 0 01
+201 r 1
+202 w 0 02
+202 r 1
+203 w 0 03
+203 r 1
+204 w 0 04
+204 r 1
+205 w 0 05
+205 r 1
+206 w 0 06
+206 r 1
+207 w 0 07
+207 r 1
+208 w 0 08
+208 r 1
+209 w 0 09
+209 r 1
+210 w 0 0a
+210 r 1
+211 w 0 0b
+211 r 1
+212 w 0 0c
+212 r 1
+213 w 0 0d
+213 r 1
+214 w 0 0e
+214 r 1
+215 w 0 0f
+215 r 1
+300 w 0 20
+300 r 1
+301 w 0 ff
+301 r 1

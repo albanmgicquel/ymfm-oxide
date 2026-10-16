@@ -1,0 +1,21 @@
+chip ym2608
+clock 7987200
+samples 40000
+mem adpcm-a opna-rhythm.bin
+fidelity min
+# The rhythm sounds from the ROM image (synthetic, in the layout ymfm gives
+# the chip's ROM) at the minimum fidelity: the total level, each drum in
+# turn at its own level and pan, all six at once, a dump of some mid-sound,
+# and the half-rate clocking of channels 5 and 6.
+0 w 0 29 1 80 0 11 1 3f
+0 w 0 18 1 df 0 10 1 01  # bass drum
+4000 w 0 19 1 9c 0 10 1 02  # snare
+8000 w 0 1a 1 5f 0 10 1 04  # top cymbal
+12000 w 0 1b 1 d8 0 10 1 08  # high hat
+16000 w 0 1c 1 c8 0 10 1 10  # tom
+20000 w 0 1d 1 df 0 10 1 20  # rim shot
+24000 w 0 18 1 df 0 19 1 df 0 1a 1 df 0 1b 1 df 0 1c 1 df 0 1d 1 df 0 10 1 3f  # all six
+27000 w 0 10 1 85  # dump the bass drum and the high hat
+30000 w 0 11 1 20 0 10 1 3f  # all six, softer
+30500 w 0 10 1 ff  # dump them all
+31000 w 0 10 1 2a

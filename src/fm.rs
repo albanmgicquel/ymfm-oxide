@@ -1398,22 +1398,19 @@ pub(crate) struct FmEngine<R, I> {
 impl<R: FmRegisters, I: Interface> FmEngine<R, I> {
     // expose some constants from the registers; not every chip reads every
     // one of them
-    #[allow(dead_code)]
+    #[allow(dead_code)] // ymfm exposes it; no chip reads it here
     pub(crate) const OUTPUTS: usize = R::OUTPUTS;
-    #[allow(dead_code)]
+    #[allow(dead_code)] // ymfm exposes it; no chip reads it here
     pub(crate) const CHANNELS: usize = R::CHANNELS;
     pub(crate) const ALL_CHANNELS: u32 = R::ALL_CHANNELS;
-    #[allow(dead_code)]
+    #[allow(dead_code)] // ymfm exposes it; no chip reads it here
     pub(crate) const OPERATORS: usize = R::OPERATORS;
 
     // also expose status flags for consumers that inject additional bits
-    #[allow(dead_code)]
     pub(crate) const STATUS_TIMERA: u8 = R::STATUS_TIMERA;
-    #[allow(dead_code)]
     pub(crate) const STATUS_TIMERB: u8 = R::STATUS_TIMERB;
-    #[allow(dead_code)]
     pub(crate) const STATUS_BUSY: u8 = R::STATUS_BUSY;
-    #[allow(dead_code)]
+    #[allow(dead_code)] // ymfm exposes it; no chip reads it here
     pub(crate) const STATUS_IRQ: u8 = R::STATUS_IRQ;
 
     /// Creates an engine in the state ymfm's constructor leaves it.
@@ -1664,7 +1661,6 @@ impl<R: FmRegisters, I: Interface> FmEngine<R, I> {
     }
 
     /// Sets the IRQ mask.
-    #[allow(dead_code)] // only the YM2608 and YM2610 family call it, and they are not ported yet
     pub(crate) fn set_irq_mask(&mut self, mask: u8) {
         self.irq_mask = mask;
         self.intf.sync_check_interrupts();
@@ -1677,7 +1673,6 @@ impl<R: FmRegisters, I: Interface> FmEngine<R, I> {
     }
 
     /// Sets the prescale factor (2/3/6).
-    #[allow(dead_code)] // only the YM2203 and YM2608 call it, and they are not ported yet
     pub(crate) fn set_clock_prescale(&mut self, prescale: u32) {
         self.clock_prescale = prescale as u8;
     }
