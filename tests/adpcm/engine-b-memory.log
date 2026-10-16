@@ -1,0 +1,289 @@
+engine b
+shift 0
+rshift 2
+samples 20000
+mem y8950.bin
+# ADPCM-B's memory paths with the address shift from the memory type: the
+# register-8 read path (two dummy reads that load the start, then bytes,
+# EOS at the end, the wrap at the limit, nothing while executing or
+# recording), the record path (external writes, EOS at the end and the
+# write dropped), CPU feeding with BRDY, record with execute stopping the
+# channel, and playback at every memory type with every pan.
+# The image y8950.bin (written by tests/adpcm.rs): 1 KB segments of ADPCM-B
+# at 0x000 (a sine), 0x400 (a ramp), 0x800 (noise) and 0xc00 (a square),
+# then a 4 KB chirp at 0x1000. Register 0x00 is the control (0x80 start,
+# 0x40 record, 0x20 external, 0x10 repeat, 0x01 reset), 0x01 pans (bits 7,
+# 6) and the memory type (bit 1 8-bit DRAM, bit 0 ROM), 0x02-0x05 start and
+# end, 0x08 the data, 0x09-0x0a delta-N, 0x0b the level, 0x0c-0x0d the
+# limit. The flags byte is the status: 0x01 EOS, 0x02 BRDY, 0x04 playing.
+0 w 1 c0
+0 w 2 00 3 01 4 01 5 01
+0 r 8  # not external: 0
+1 w 0 20  # external, not executing: two dummy reads
+2 r 8
+3 r 8
+4 r 8
+5 r 8
+6 r 8
+7 r 8
+8 r 8
+9 r 8
+10 r 8
+11 r 8
+12 r 8
+13 r 8
+14 r 8
+15 r 8
+20 r 0  # other registers read 0
+20 r f
+30 w c 00 d 00  # limit 0: bytes 0-3
+30 w 2 00 3 00 4 ff 5 00
+30 w 0 20
+31 r 8
+32 r 8
+33 r 8
+34 r 8
+35 r 8
+36 r 8
+37 r 8
+38 r 8
+39 r 8
+40 r 8
+41 r 8
+42 r 8
+50 w c ff d ff 1 c1  # ROM: 32-byte units
+50 w 2 20 3 00 4 20 5 00
+50 w 0 20
+51 r 8
+52 r 8
+53 r 8
+54 r 8
+55 r 8
+56 r 8
+57 r 8
+58 r 8
+59 r 8
+60 r 8
+61 r 8
+62 r 8
+63 r 8
+64 r 8
+65 r 8
+66 r 8
+67 r 8
+68 r 8
+69 r 8
+70 r 8
+71 r 8
+72 r 8
+73 r 8
+74 r 8
+75 r 8
+76 r 8
+77 r 8
+78 r 8
+79 r 8
+80 r 8
+81 r 8
+82 r 8
+83 r 8
+84 r 8
+85 r 8
+86 r 8
+100 w 0 60  # record
+100 r 8  # no read while recording
+101 w 1 c0
+101 w 2 00 3 03 4 01 5 03
+101 w 0 60
+102 w 8 a0
+103 w 8 a1
+104 w 8 a2
+105 w 8 a3
+106 w 8 a4
+107 w 8 a5
+108 w 8 a6
+109 w 8 a7
+110 w 8 a8
+111 w 8 a9
+120 w 0 20
+121 r 8
+122 r 8
+123 r 8  # read back
+124 r 8
+125 r 8
+126 r 8
+127 r 8
+128 r 8
+129 r 8
+130 r 8
+140 w 9 00 a 40 b ff 0 a0  # play, and read while playing
+141 r 8
+1000 w 0 80  # CPU-fed
+1010 w 8 77
+1018 w 8 73
+1026 w 8 22
+1034 w 8 33
+1042 w 8 34
+1050 w 8 33
+1058 w 8 43
+1066 w 8 34
+1074 w 8 33
+1082 w 8 43
+1090 w 8 34
+1098 w 8 33
+1106 w 8 34
+1114 w 8 33
+1122 w 8 43
+1130 w 8 33
+1138 w 8 42
+1146 w 8 33
+1154 w 8 42
+1162 w 8 23
+1170 w 8 32
+1178 w 8 33
+1186 w 8 22
+1194 w 8 21
+1202 w 8 10
+1210 w 8 99
+1218 w 8 ab
+1226 w 8 cc
+1234 w 8 cc
+1242 w 8 bc
+1250 w 8 cc
+1258 w 8 bc
+1266 w 8 bd
+1274 w 8 ac
+1282 w 8 ac
+1290 w 8 bb
+1298 w 8 cb
+1306 w 8 cc
+1314 w 8 bb
+1322 w 8 cb
+1330 w 8 cb
+1338 w 8 cb
+1346 w 8 bc
+1354 w 8 cb
+1362 w 8 bc
+1370 w 8 bb
+1378 w 8 cc
+1386 w 8 ab
+1394 w 8 cb
+1402 w 8 bc
+1410 w 8 bc
+1418 w 8 bb
+1426 w 8 bc
+1434 w 8 ca
+1442 w 8 ca
+1450 w 8 bb
+1458 w 8 bc
+1466 w 8 bc
+1474 w 8 ac
+1482 w 8 ab
+1490 w 8 bb
+1498 w 8 ca
+1506 w 8 ca
+1514 w 8 bb
+1522 w 8 bc
+1530 w 8 ab
+1538 w 8 bc
+1546 w 8 ab
+1554 w 8 bb
+1562 w 8 ac
+1570 w 8 aa
+1578 w 8 aa
+1586 w 8 9a
+1594 w 8 98
+1602 w 8 00
+1610 w 8 12
+1618 w 8 43
+1626 w 8 53
+1634 w 8 53
+1642 w 8 43
+1650 w 8 53
+1658 w 8 34
+1666 w 8 43
+1674 w 8 43
+1682 w 8 44
+1690 w 8 33
+1698 w 8 44
+1706 w 8 33
+1714 w 8 43
+1722 w 8 44
+1730 w 8 24
+1738 w 8 23
+1746 w 8 43
+1754 w 8 34
+1762 w 8 34
+1770 w 8 33
+1778 w 8 52
+1786 w 8 33
+1794 w 8 34
+1802 w 8 42
+1810 w 8 34
+1818 w 8 33
+1826 w 8 35
+1834 w 8 23
+1842 w 8 33
+1850 w 8 43
+1858 w 8 34
+1866 w 8 33
+1874 w 8 43
+1882 w 8 34
+1890 w 8 33
+1898 w 8 42
+1906 w 8 34
+1914 w 8 23
+1922 w 8 33
+1930 w 8 34
+1938 w 8 32
+1946 w 8 42
+1954 w 8 22
+1962 w 8 32
+1970 w 8 22
+1978 w 8 12
+1986 w 8 10
+1994 w 8 88
+2002 w 8 ab
+2010 w 8 bd
+2018 w 8 bc
+2026 w 8 cc
+2034 w 8 cb
+2042 w 8 cb
+2050 w 8 cc
+2058 w 8 bc
+2066 w 8 bd
+2074 w 8 ab
+2082 w 8 cb
+2090 w 8 bd
+2098 w 8 ab
+2106 w 8 cb
+2114 w 8 bd
+2122 w 8 ab
+2130 w 8 bc
+2138 w 8 bc
+2146 w 8 bc
+2154 w 8 ac
+2162 w 8 bb
+2170 w 8 bc
+2178 w 8 ca
+2186 w 8 bc
+2194 w 8 bb
+2202 w 8 cb
+2300 w 0 c0  # start and record: stops
+2301 w 8 55
+2400 w 0 e0
+3000 w 1 80
+3000 w 2 00 3 00 4 ff 5 00
+3000 w 9 00 a b0 b ff 0 b0
+6000 w 1 42
+6000 w 2 00 3 00 4 1f 5 00
+6000 w 9 00 a b0 b df 0 b0
+9000 w 1 c1
+9000 w 2 00 3 00 4 1f 5 00
+9000 w 9 00 a b0 b bf 0 b0
+12000 w 1 03
+12000 w 2 00 3 00 4 1f 5 00
+12000 w 9 00 a b0 b 9f 0 b0
+15000 w 1 c0
+15000 w 2 00 3 00 4 ff 5 00
+15000 w 9 00 a b0 b 7f 0 b0

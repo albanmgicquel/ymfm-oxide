@@ -1,0 +1,65 @@
+engine a
+shift 8
+rshift 0
+samples 16000
+mem adpcm-a.bin
+# ADPCM-A as the YM2610 addresses it, in 256-byte units: all six channels
+# with their own pans and levels, the total level swept, restarts and
+# dumps, channel masks as the YM2608 clocks channels 4 and 5 at half rate,
+# a start past the end, and the end compared on 20 bits only.
+# The image adpcm-a.bin (written by tests/adpcm.rs): six 1 KB segments of
+# ADPCM-A at 0x000, 0x400, ... 0x1400 (a sine, a ramp, a square, a chirp, a
+# fast sine and a slow one), then 2 KB of noise at 0x1800. Register 0x00
+# keys on (bit 7 clear) or dumps (bit 7 set) the channels in its low six
+# bits; 0x01 is the total level; 0x08-0x0d pan (bits 7, 6) and level (bits
+# 0-4); 0x10/0x18 the start and 0x20/0x28 the end, low and high. The flags
+# byte is the mask of channels that just reached their end.
+0 w 10 00 18 00 20 03 28 00
+0 w 11 04 19 00 21 07 29 00
+0 w 12 08 1a 00 22 0b 2a 00
+0 w 13 0c 1b 00 23 0f 2b 00
+0 w 14 10 1c 00 24 13 2c 00
+0 w 15 14 1d 00 25 17 2d 00
+0 w 8 df 9 9a a 55 b d0 c c8 d 1f  # pans and levels
+0 w 1 3f  # total level: loudest
+10 w 0 3f  # key on all six
+400 w 1 38
+700 w 1 30
+1000 w 1 20
+1300 w 1 10
+1600 w 1 3f
+2100 w d df  # channel 5 audible again
+2200 w 0 3f  # every channel again
+2500 w 0 15  # channels 0, 2 and 4 restart while playing
+3000 w 0 81  # dump channel 0
+3200 w 0 be  # dump the rest
+3300 w 0 3f
+3300 m f  # channels 4 and 5 neither clocked nor heard
+3700 m 3f
+3900 m f
+4000 m 3f
+4100 m 0  # nothing
+4300 m 3f
+6000 w 8 1f 9 00 a 40 b 80 c ff d c1  # more pans and levels
+6000 w 10 18 18 00 20 1f 28 00
+6000 w 11 f0 19 0f 21 ef 29 1f
+6000 w 12 10 1a 00 22 0f 2a 00
+6000 w 13 14 1b 00 23 15 2b 00
+6000 w 0 0f  # noise; ends at once on 20 bits; start past the end; the fast sine
+9000 w 2 55  # the test register
+9000 w 10 14 18 00 20 15 28 00
+9000 w 11 10 19 00 21 11 29 00
+9000 w 12 0c 1a 00 22 0d 2a 00
+9000 w 13 08 1b 00 23 09 2b 00
+9000 w 14 04 1c 00 24 05 2c 00
+9000 w 15 00 1d 00 25 01 2d 00
+9000 w 8 df 9 df a df b df c df d df 1 3c
+9100 w 0 01  # one by one
+9220 w 0 02  # one by one
+9340 w 0 04  # one by one
+9460 w 0 08  # one by one
+9580 w 0 10  # one by one
+9700 w 0 20  # one by one
+12000 w 1 00 8 c0 0 01  # both levels at zero: silent
+12500 w 1 3f 0 01
+15000 w 0 bf

@@ -1,0 +1,34 @@
+engine b
+shift 8
+rshift 1
+samples 30000
+mem y8950.bin
+# ADPCM-B as the YM2610 addresses it, in 256-byte units whatever the
+# memory type, with the YM2610's output shift: stereo pans, EOS, repeat,
+# the limit register wrapping a sample short of its end, and the reset bit.
+# The image y8950.bin (written by tests/adpcm.rs): 1 KB segments of ADPCM-B
+# at 0x000 (a sine), 0x400 (a ramp), 0x800 (noise) and 0xc00 (a square),
+# then a 4 KB chirp at 0x1000. Register 0x00 is the control (0x80 start,
+# 0x40 record, 0x20 external, 0x10 repeat, 0x01 reset), 0x01 pans (bits 7,
+# 6) and the memory type (bit 1 8-bit DRAM, bit 0 ROM), 0x02-0x05 start and
+# end, 0x08 the data, 0x09-0x0a delta-N, 0x0b the level, 0x0c-0x0d the
+# limit. The flags byte is the status: 0x01 EOS, 0x02 BRDY, 0x04 playing.
+0 w 1 c0  # both pans
+0 w 2 00 3 00 4 03 5 00
+0 w 9 00 a 80 b ff
+10 w 0 a0
+1000 w 1 80  # left
+1500 w 1 40  # right
+2000 w 1 00  # neither
+2500 w 1 c3  # both; the memory type does not matter
+5000 w 2 04 3 00 4 07 5 00
+5000 w 9 ff a ff 0 b0  # the ramp, repeating
+8000 w c 05 d 00  # limit 5: wraps to 0 before the end
+12000 w c ff d ff
+12000 w 2 0c 3 00 4 0f 5 00
+12000 w b 80 0 a0  # the square, once
+15000 w 2 10 3 00 4 1f 5 00
+15000 w 9 00 a 60 0 a0  # the chirp
+18000 w 0 a1  # start with reset
+18500 w 0 b0
+25000 w 0 00

@@ -1,0 +1,41 @@
+engine a
+shift 0
+rshift 0
+samples 12000
+mem adpcm-a.bin
+# ADPCM-A as the YM2608 addresses it, in bytes: the default pans and
+# levels from reset, segments with exact byte ends, a sample one byte
+# long, a key-on and a dump in the same write, and writes to unused
+# registers.
+# The image adpcm-a.bin (written by tests/adpcm.rs): six 1 KB segments of
+# ADPCM-A at 0x000, 0x400, ... 0x1400 (a sine, a ramp, a square, a chirp, a
+# fast sine and a slow one), then 2 KB of noise at 0x1800. Register 0x00
+# keys on (bit 7 clear) or dumps (bit 7 set) the channels in its low six
+# bits; 0x01 is the total level; 0x08-0x0d pan (bits 7, 6) and level (bits
+# 0-4); 0x10/0x18 the start and 0x20/0x28 the end, low and high. The flags
+# byte is the mask of channels that just reached their end.
+0 w 10 00 18 00 20 ff 28 03
+0 w 11 00 19 04 21 ff 29 07
+0 w 12 00 1a 08 22 ff 2a 0b
+0 w 13 00 1b 0c 23 ff 2b 0f
+0 w 14 00 1c 10 24 ff 2c 13
+0 w 15 00 1d 14 25 ff 2d 17
+0 w 1 3f
+0 w 0 3f  # the reset pans and levels
+3000 w 8 9f 9 5c a cd b 93 c 47 d d9
+3000 w 10 00 18 18 20 00 28 18
+3000 w 11 23 19 01 21 56 29 04
+3000 w 12 00 1a 0a 22 ff 2a 09
+3000 w 0 3f
+3500 w 3 aa 4 55 e 12 f 34 2e 56 2f 78  # unused
+4000 w 0 87  # dump 0-2
+4100 w 0 07
+5000 w 1 2a
+7000 w 0 ff  # dump all
+7100 w 10 00 18 18 20 ff 28 18
+7100 w 11 00 19 19 21 ff 29 19
+7100 w 12 00 1a 1a 22 ff 2a 1a
+7100 w 13 00 1b 1b 23 ff 2b 1b
+7100 w 14 00 1c 1c 24 ff 2c 1c
+7100 w 15 00 1d 1d 25 ff 2d 1d
+7100 w 1 3f 0 3f  # the noise, six ways

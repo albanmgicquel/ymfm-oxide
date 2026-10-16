@@ -1,0 +1,46 @@
+chip y8950
+clock 3579545
+samples 6000
+mem io y8950-io.bin
+# The keyboard and I/O ports: keyboard in (0x05) reads the interface's I/O
+# address 1 and keyboard out (0x06) writes it; the I/O data (0x19) reads
+# address 0 and writes it masked by the four-bit direction register
+# (0x18). The image y8950-io.bin holds 0x5a and 0xc3, and the writes land
+# in it. ymfm passes the ADPCM data reads (0x09, 0x1a) to ADPCM-B registers
+# 2 and 0x13, which read 0, and every other data read is 0xff. An FM voice
+# plays throughout.
+0 w 0 20 1 01 0 23 1 21 0 40 1 3f 0 43 1 08 0 63 1 f0 0 83 1 0f 0 a0 1 41 0 b0 1 32
+0 w 0 05
+0 r 1
+0 w 0 19
+0 r 1
+0 w 0 09
+0 r 1
+0 w 0 1a
+0 r 1
+0 w 0 0f
+0 r 1
+0 w 0 04
+0 r 1
+0 w 0 00
+0 r 1
+1 r 3  # offset 3 is the data port too
+1 r 2  # and 2 the status
+100 w 0 18 1 ff  # direction: 0x0f
+100 w 0 19 1 a5  # writes 0x05
+101 w 0 19
+101 r 1
+200 w 0 18 1 03
+200 w 0 19 1 ff  # writes 0x03
+201 w 0 19
+201 r 1
+300 w 0 06 1 3c  # keyboard out
+301 w 0 05
+301 r 1
+400 w 0 18 1 00
+400 w 0 19 1 ff  # writes 0
+401 w 0 19
+401 r 1
+500 w 0 06 1 00
+501 w 0 05
+501 r 1
