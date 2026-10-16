@@ -1,0 +1,47 @@
+chip ymf278b
+clock 33868800
+samples 34000
+mem pcm wavetable.bin
+# Panning, levels and the mix: every panpot value from -8 to 7 on one
+# channel (written under the key), the output channel bit (0x68 bit 4)
+# moving a voice from DO2 to DO1, total levels with level direct and
+# without it (where the level slides, faster towards louder), and the mix
+# control (0xF8 FM, 0xF9 PCM, left and right) at every value.
+0 w 2 05 3 03  # NEW and NEW2: OPL4 mode
+0 w 4 20 5 00 4 38 5 02 4 50 5 01 4 08 5 02 4 68 5 80
+0 w 4 68 5 80  # panpot 0
+500 w 4 68 5 81  # panpot 1
+1000 w 4 68 5 82  # panpot 2
+1500 w 4 68 5 83  # panpot 3
+2000 w 4 68 5 84  # panpot 4
+2500 w 4 68 5 85  # panpot 5
+3000 w 4 68 5 86  # panpot 6
+3500 w 4 68 5 87  # panpot 7
+4000 w 4 68 5 88  # panpot -8
+4500 w 4 68 5 89  # panpot -7
+5000 w 4 68 5 8a  # panpot -6
+5500 w 4 68 5 8b  # panpot -5
+6000 w 4 68 5 8c  # panpot -4
+6500 w 4 68 5 8d  # panpot -3
+7000 w 4 68 5 8e  # panpot -2
+7500 w 4 68 5 8f  # panpot -1
+8000 w 4 68 5 90  # to DO1
+8500 w 4 68 5 95  # to DO1, panned
+9000 w 4 68 5 80  # back to DO2
+9500 w 4 50 5 81  # level 0x40 direct
+10700 w 4 50 5 20  # level 0x10 sliding
+11900 w 4 50 5 fe  # level 0x7f sliding
+13100 w 4 50 5 00  # level 0x0 sliding
+14300 w 4 50 5 41  # level 0x20 direct
+15500 w 4 50 5 c0  # level 0x60 sliding
+16700 w 4 50 5 01
+16700 w 4 f9 5 07  # PCM mix right 0, left 7
+17300 w 4 f9 5 0e  # PCM mix right 1, left 6
+17900 w 4 f9 5 15  # PCM mix right 2, left 5
+18500 w 4 f9 5 1c  # PCM mix right 3, left 4
+19100 w 4 f9 5 23  # PCM mix right 4, left 3
+19700 w 4 f9 5 2a  # PCM mix right 5, left 2
+20300 w 4 f9 5 31  # PCM mix right 6, left 1
+20900 w 4 f9 5 38  # PCM mix right 7, left 0
+21500 w 4 f9 5 00
+21500 w 4 21 5 00 4 39 5 10 4 51 5 01 4 09 5 00 4 69 5 90  # ch 1 to DO1: no mix applies

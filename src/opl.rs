@@ -2096,7 +2096,312 @@ impl<I: Interface> Ymf289b<I> {
     }
 }
 
-// ---- YMF278B: not yet ported ----
+//*********************************************************
+//  YMF278B
+//*********************************************************
+
+use crate::pcm::PcmEngine;
+
+/// The OPL4 register set: the OPL3's, with the NEW2 bit and a prescale of
+/// 19.
+pub(crate) type Opl4Registers = OplRegisters<4>;
+
+/// The Yamaha YMF278B (OPL4): the OPL3's FM side beside a 24-channel PCM
+/// wavetable engine that plays samples from external memory (the
+/// [`AccessClass::Pcm`](crate::AccessClass::Pcm) class of the interface), and
+/// six outputs: FM outputs C and D (DO0), PCM outputs C and D (DO1), and the
+/// mix of FM and PCM outputs A and B, left and right (DO2).
+///
+/// The ports: 0 and 2 are the FM address ports (2 the second bank), 1 and 3
+/// the FM data ports; 4 is the PCM address port and 5 the PCM data port,
+/// which also reads back.
+#[derive(Clone)]
+pub struct Ymf278b<I: Interface = NullInterface> {
+    /// The address register.
+    address: u16,
+    /// The FM resampling position.
+    fm_pos: u32,
+    /// How many more samples until the LD flag clears.
+    load_remaining: u32,
+    /// Whether the next status read returns the chip ID.
+    next_status_id: bool,
+    /// The core FM engine.
+    fm: FmEngine<Opl4Registers, I>,
+    /// The core PCM engine.
+    pcm: PcmEngine,
+}
+
+impl<I: Interface> Ymf278b<I> {
+    /// The number of outputs.
+    pub const OUTPUTS: usize = 6;
+
+    // Using the nominal datasheet frequency of 33.868MHz, the output of the
+    // chip will be clock/768 = 44.1kHz. However, the FM engine is clocked
+    // internally at clock/(19*36), or 49.515kHz, so the FM output needs to be
+    // downsampled. We treat this as needing to clock the FM engine an extra
+    // tick every few samples. The exact ratio is 768/(19*36) or 768/684 =
+    // 192/171. So if we always clock the FM once, we'll have 192/171 - 1 =
+    // 21/171 left. Thus we count 21 for each sample and when it gets above
+    // 171, we tick an extra time.
+    const FM_EXTRA_SAMPLE_THRESH: u32 = 171;
+    const FM_EXTRA_SAMPLE_STEP: u32 = 192 - Self::FM_EXTRA_SAMPLE_THRESH;
+
+    const STATUS_BUSY: u8 = 0x01;
+    const STATUS_LD: u8 = 0x02;
+
+    /// Creates a chip that talks to the system through `intf`, reset.
+    pub fn new(intf: I) -> Self {
+        let mut chip = Ymf278b {
+            address: 0,
+            fm_pos: 0,
+            load_remaining: 0,
+            next_status_id: false,
+            fm: FmEngine::new(intf),
+            pcm: PcmEngine::new(),
+        };
+        chip.reset();
+        chip
+    }
+
+    /// Resets the chip.
+    pub fn reset(&mut self) {
+        // reset the engines
+        self.fm.reset();
+        self.pcm.reset();
+
+        // next status read will return ID
+        self.next_status_id = true;
+    }
+
+    /// Returns the output sample rate for an input clock.
+    pub fn sample_rate(&self, input_clock: u32) -> u32 {
+        input_clock / 768
+    }
+
+    /// Invalidates the cached operator data.
+    pub fn invalidate_caches(&mut self) {
+        self.fm.invalidate_caches();
+    }
+
+    /// Reads the status register.
+    pub fn read_status(&mut self) -> u8 {
+        // first status read after initialization returns a chip ID, which
+        // varies based on the "new" flags, indicating the mode
+        if self.next_status_id {
+            let result = if self.fm.regs().new2flag() != 0 {
+                0x02
+            } else if self.fm.regs().newflag() != 0 {
+                0x00
+            } else {
+                0x06
+            };
+            self.next_status_id = false;
+            result
+        } else {
+            let mut result = self.fm.status();
+            if self.fm.intf_mut().is_busy() {
+                result |= Self::STATUS_BUSY;
+            }
+            if self.load_remaining != 0 {
+                result |= Self::STATUS_LD;
+            }
+
+            // if new2 flag is not set, we're in OPL2 or OPL3 mode
+            if self.fm.regs().new2flag() == 0 {
+                result &= !(Self::STATUS_BUSY | Self::STATUS_LD);
+            }
+            result
+        }
+    }
+
+    /// Reads the PCM data register.
+    pub fn read_data_pcm(&mut self) -> u8 {
+        // read from PCM
+        if bitfield(u32::from(self.address), 9, 1) != 0 {
+            let regnum = u32::from(self.address & 0xff);
+            let mut result = self.pcm.read(regnum, self.fm.intf_mut());
+            if regnum == 0x02 {
+                result |= 0x20;
+            }
+            return result;
+        }
+        0
+    }
+
+    /// Reads from the chip: the status at offset 0, the PCM data at 5.
+    pub fn read(&mut self, offset: u32) -> u8 {
+        match offset & 7 {
+            0 => self.read_status(),   // status port
+            5 => self.read_data_pcm(), // PCM data port
+            _ => 0xff,
+        }
+    }
+
+    /// Writes the FM address register.
+    pub fn write_address(&mut self, data: u8) {
+        // just set the address
+        self.address = u16::from(data);
+    }
+
+    /// Writes the FM data register.
+    pub fn write_data(&mut self, data: u8) {
+        // write to FM
+        if bitfield(u32::from(self.address), 9, 1) == 0 {
+            let old = self.fm.regs().new2flag();
+            self.fm.write(self.address, data);
+
+            // changing NEW2 from 0->1 causes the next status read to return
+            // the chip ID
+            if old == 0 && self.fm.regs().new2flag() != 0 {
+                self.next_status_id = true;
+            }
+        }
+
+        // BUSY goes for 56 clocks on FM writes
+        self.fm.intf_mut().set_busy_end(56);
+    }
+
+    /// Writes the upper FM address register, which selects the second bank.
+    pub fn write_address_hi(&mut self, data: u8) {
+        // just set the address
+        self.address = u16::from(data) | 0x100;
+
+        // YMF262, in compatibility mode, treats the upper bit as masked
+        // except for register 0x105; assuming YMF278B works the same way?
+        if self.fm.regs().newflag() == 0 && self.address != 0x105 {
+            self.address &= 0xff;
+        }
+    }
+
+    /// Writes the PCM address register.
+    pub fn write_address_pcm(&mut self, data: u8) {
+        // just set the address
+        self.address = u16::from(data) | 0x200;
+    }
+
+    /// Writes the PCM data register, which the chip ignores until NEW2 is
+    /// set.
+    pub fn write_data_pcm(&mut self, data: u8) {
+        // ignore data writes if new2 is not yet set
+        if self.fm.regs().new2flag() == 0 {
+            return;
+        }
+
+        // write to PCM
+        if bitfield(u32::from(self.address), 9, 1) != 0 {
+            let addr = u32::from(self.address & 0xff);
+            self.pcm.write(addr, data, self.fm.intf_mut());
+
+            // writes to the waveform number cause loads to happen for "about
+            // 300usec" which is ~13 samples at the nominal output frequency
+            // of 44.1kHz
+            if (0x08..=0x1f).contains(&addr) {
+                self.load_remaining = 13;
+            }
+        }
+
+        // BUSY goes for 88 clocks on PCM writes
+        self.fm.intf_mut().set_busy_end(88);
+    }
+
+    /// Writes to the chip: the FM address ports at offsets 0 and 2 (the
+    /// second bank), the FM data ports at 1 and 3, the PCM address port at 4
+    /// and the PCM data port at 5.
+    pub fn write(&mut self, offset: u32, data: u8) {
+        match offset & 7 {
+            0 => self.write_address(data),     // address port
+            1 => self.write_data(data),        // data port
+            2 => self.write_address_hi(data),  // address port
+            3 => self.write_data(data),        // data port
+            4 => self.write_address_pcm(data), // PCM address port
+            5 => self.write_data_pcm(data),    // PCM data port
+            _ => {}
+        }
+    }
+
+    /// Generates one sample into each element of `output`.
+    pub fn generate(&mut self, output: &mut [Output<6>]) {
+        const MIX_SCALE: [i16; 8] = [0x7fa, 0x5a4, 0x3fd, 0x2d2, 0x1fe, 0x169, 0xff, 0];
+        let regs = self.pcm.regs();
+        let pcm_l = i32::from(MIX_SCALE[regs.mix_pcm_l() as usize]);
+        let pcm_r = i32::from(MIX_SCALE[regs.mix_pcm_r() as usize]);
+        let fm_l = i32::from(MIX_SCALE[regs.mix_fm_l() as usize]);
+        let fm_r = i32::from(MIX_SCALE[regs.mix_fm_r() as usize]);
+        for out in output.iter_mut() {
+            // clock the system
+            self.fm_pos += Self::FM_EXTRA_SAMPLE_STEP;
+            if self.fm_pos >= Self::FM_EXTRA_SAMPLE_THRESH {
+                self.fm.clock(FmEngine::<Opl4Registers, I>::ALL_CHANNELS);
+                self.fm_pos -= Self::FM_EXTRA_SAMPLE_THRESH;
+            }
+            self.fm.clock(FmEngine::<Opl4Registers, I>::ALL_CHANNELS);
+            self.pcm.clock(PcmEngine::ALL_CHANNELS);
+
+            // update the FM content; mixing details for YMF278B need
+            // verification
+            let mut fmout = [0i32; 4];
+            self.fm.output(
+                &mut fmout,
+                0,
+                32767,
+                FmEngine::<Opl4Registers, I>::ALL_CHANNELS,
+            );
+
+            // update the PCM content
+            let mut pcmout = [0i32; PcmEngine::OUTPUTS];
+            self.pcm
+                .output(&mut pcmout, PcmEngine::ALL_CHANNELS, self.fm.intf_mut());
+
+            out.data = [
+                // DO0 output: FM channels 2+3 only
+                fmout[2],
+                fmout[3],
+                // DO1 output: wavetable channels 2+3 only
+                pcmout[2],
+                pcmout[3],
+                // DO2 output: mixed FM channels 0+1 and wavetable channels
+                // 0+1
+                (fmout[0] * fm_l + pcmout[0] * pcm_l) >> 11,
+                (fmout[1] * fm_r + pcmout[1] * pcm_r) >> 11,
+            ];
+
+            // YMF278B output is 16-bit 2s complement serial
+            out.clamp16();
+        }
+
+        // decrement the load waiting count
+        if self.load_remaining > 0 {
+            let samples = u32::try_from(output.len()).unwrap_or(u32::MAX);
+            self.load_remaining -= self.load_remaining.min(samples);
+        }
+    }
+
+    /// Reports the expiry of timer `tnum` (0 or 1), which the interface's
+    /// `set_timer` asked for.
+    pub fn timer_expired(&mut self, tnum: u32) {
+        self.fm.engine_timer_expired(tnum);
+    }
+
+    /// Returns the interface.
+    pub fn intf(&self) -> &I {
+        self.fm.intf()
+    }
+
+    /// Returns the interface, mutably.
+    pub fn intf_mut(&mut self) -> &mut I {
+        self.fm.intf_mut()
+    }
+
+    /// Returns the FM register file as last written, for a diagnostic.
+    pub fn registers(&self) -> &[u8] {
+        self.fm.regs().data()
+    }
+
+    /// Returns the PCM register file, for a diagnostic.
+    pub fn pcm_registers(&self) -> &[u8] {
+        self.pcm.regs().data()
+    }
+}
 
 //*********************************************************
 //  OPLL BASE

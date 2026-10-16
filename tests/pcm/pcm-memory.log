@@ -1,0 +1,78 @@
+chip ymf278b
+clock 33868800
+samples 9000
+mem pcm wavetable.bin
+# Memory through the PCM ports. Before NEW2, PCM writes are ignored but the
+# data port still reads back. In memory access mode (register 2 bit 0),
+# the data register writes and reads the memory at the address in
+# registers 3 to 5, which moves on by one each time and wraps from
+# 0x3FFFFF to 0; the address registers read back moved. The register
+# itself is untouched in that mode, and outside it register 6 is a plain
+# register. Then a header and an 8-bit square wave are written to memory
+# and played from there.
+0 w 4 02 5 01 4 50 5 55  # ignored before NEW2
+0 w 4 02
+0 r 5
+0 w 4 50
+0 r 5
+1 w 2 05 3 03  # NEW and NEW2: OPL4 mode
+1 w 4 02 5 01 4 03 5 00 4 04 5 30 4 05 5 00  # memory mode, address 0x3000
+1 w 4 06 5 11 5 22 5 33 5 44
+1 w 4 03
+1 r 5
+1 w 4 04
+1 r 5
+1 w 4 05
+1 r 5
+2 w 4 05 5 00  # back to 0x3000
+2 w 4 06
+2 r 5
+2 r 5
+2 r 5
+2 r 5
+2 r 5
+3 w 4 03 5 3f 4 04 5 ff 4 05 5 fe  # address 0x3ffffe
+3 w 4 06 5 a1 5 a2 5 a3
+3 w 4 03
+3 r 5
+3 w 4 04
+3 r 5
+3 w 4 05
+3 r 5
+3 w 4 03 5 3f 4 04 5 ff 4 05 5 fe  # again, two bytes: the address registers wrap to 0
+3 w 4 06 5 b1 5 b2
+3 w 4 03
+3 r 5
+3 w 4 04
+3 r 5
+3 w 4 05
+3 r 5
+4 w 4 03 5 00 4 04 5 00 4 05 5 00  # address 0: wave 0's header
+4 w 4 06
+4 r 5
+4 r 5
+4 r 5
+4 r 5
+4 r 5
+4 r 5
+4 r 5
+4 r 5
+4 r 5
+4 r 5
+4 r 5
+4 r 5
+5 w 4 02 5 00 4 06 5 77  # out of memory mode, register 6 is a plain register
+5 w 4 06
+5 r 5
+6 w 4 02 5 01 4 03 5 00 4 04 5 01 4 05 5 e0  # a header for wave 40 at 0x1e0
+6 w 4 06 5 00 5 30 5 00 5 00 5 00 5 ff 5 c0 5 00 5 f0 5 00 5 fc 5 00
+6 w 4 04 5 30 4 05 5 00  # its 64 samples at 0x3000
+6 w 4 06 5 60 5 60 5 60 5 60 5 60 5 60 5 60 5 60 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 60 5 60 5 60 5 60 5 60 5 60 5 60 5 60 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 60 5 60 5 60 5 60 5 60 5 60 5 60 5 60 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 60 5 60 5 60 5 60 5 60 5 60 5 60 5 60 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0 5 a0
+7 w 4 02 5 00
+10 w 4 20 5 00 4 38 5 10 4 50 5 01 4 08 5 28 4 68 5 80  # play wave 40
+4000 w 4 68 5 00
+5000 w 4 02 5 01 4 03 5 00 4 04 5 30 4 05 5 10  # rewrite part of it while it plays
+5000 w 4 21 5 00 4 39 5 04 4 51 5 01 4 09 5 28 4 69 5 80
+6000 w 4 06 5 00 5 10 5 20 5 30 5 40 5 50 5 60 5 70 5 80 5 90 5 a0 5 b0 5 c0 5 d0 5 e0 5 f0
+6000 w 4 02 5 00
+8000 w 4 69 5 00

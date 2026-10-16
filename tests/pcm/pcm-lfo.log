@@ -1,0 +1,42 @@
+chip ymf278b
+clock 33868800
+samples 40000
+mem pcm wavetable.bin
+# The LFO: every speed (register 0x80 bits 3-5), each with three of the
+# vibrato depths 1 to 7 (bits 0-2), every depth at some speed, on one channel, AM depths 1 to 7 (register 0xE0) on another,
+# both together on a third, and the LFO reset bit (0x68 bit 5) on key ons,
+# against a key on without it.
+0 w 2 05 3 03  # NEW and NEW2: OPL4 mode
+0 w 4 20 5 00 4 38 5 02 4 50 5 01 4 08 5 02 4 68 5 07 4 68 5 87  # ch 0: vibrato, panpot 7: right only
+0 w 4 21 5 00 4 39 5 02 4 51 5 01 4 09 5 02 4 69 5 09 4 69 5 89  # ch 1: AM, panpot -7: left only
+0 w 4 80 5 01 4 81 5 00 4 e1 5 01
+1100 w 4 80 5 04 4 81 5 00 4 e1 5 04
+2200 w 4 80 5 06 4 81 5 00 4 e1 5 06
+3300 w 4 80 5 0a 4 81 5 08 4 e1 5 02
+4400 w 4 80 5 0d 4 81 5 08 4 e1 5 05
+5500 w 4 80 5 0f 4 81 5 08 4 e1 5 07
+6600 w 4 80 5 13 4 81 5 10 4 e1 5 03
+7700 w 4 80 5 16 4 81 5 10 4 e1 5 06
+8800 w 4 80 5 11 4 81 5 10 4 e1 5 01
+9900 w 4 80 5 1c 4 81 5 18 4 e1 5 04
+11000 w 4 80 5 1f 4 81 5 18 4 e1 5 07
+12100 w 4 80 5 1a 4 81 5 18 4 e1 5 02
+13200 w 4 80 5 25 4 81 5 20 4 e1 5 05
+14300 w 4 80 5 21 4 81 5 20 4 e1 5 01
+15400 w 4 80 5 23 4 81 5 20 4 e1 5 03
+16500 w 4 80 5 2e 4 81 5 28 4 e1 5 06
+17600 w 4 80 5 2a 4 81 5 28 4 e1 5 02
+18700 w 4 80 5 2c 4 81 5 28 4 e1 5 04
+19800 w 4 80 5 37 4 81 5 30 4 e1 5 07
+20900 w 4 80 5 33 4 81 5 30 4 e1 5 03
+22000 w 4 80 5 35 4 81 5 30 4 e1 5 05
+23100 w 4 80 5 39 4 81 5 38 4 e1 5 01
+24200 w 4 80 5 3c 4 81 5 38 4 e1 5 04
+25300 w 4 80 5 3e 4 81 5 38 4 e1 5 06
+26400 w 4 68 5 00 4 69 5 00
+27000 w 4 22 5 00 4 3a 5 02 4 52 5 01 4 0a 5 02 4 6a 5 00 4 82 5 3b 4 e2 5 06 4 6a 5 80  # ch 2: both, no reset
+28000 w 4 6a 5 00
+28400 w 4 6a 5 a0  # key on with the LFO reset
+29400 w 4 6a 5 00
+29800 w 4 6a 5 80  # key on without it
+30800 w 4 6a 5 00

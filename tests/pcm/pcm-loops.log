@@ -1,0 +1,21 @@
+chip ymf278b
+clock 33868800
+samples 14000
+mem pcm wavetable.bin
+# Loops: wave 1 looping from 128 at a high pitch, so it wraps many times;
+# wave 3, a one-shot that plays to its end and holds its last (silent)
+# sample; wave 5, whose loop lies past its end, so each wrap jumps forward;
+# wave 6, whose end is zero, so every step adds the loop position; and wave
+# 0 at a step of more than its whole length.
+0 w 2 05 3 03  # NEW and NEW2: OPL4 mode
+0 w 4 20 5 46 4 38 5 32 4 50 5 01 4 08 5 01 4 68 5 80  # ch 0: wave 1 at octave 3
+2000 w 4 68 5 00
+2600 w 4 21 5 00 4 39 5 20 4 51 5 01 4 09 5 03 4 69 5 80  # ch 1: wave 3, the one-shot, at 2 samples a step
+5400 w 4 69 5 00
+6000 w 4 22 5 80 4 3a 5 03 4 52 5 01 4 0a 5 05 4 6a 5 80  # ch 2: wave 5, loop past the end
+8000 w 4 6a 5 00
+8600 w 4 23 5 00 4 3b 5 e1 4 53 5 01 4 0b 5 06 4 6b 5 80  # ch 3: wave 6, an end of zero
+10600 w 4 6b 5 00
+11200 w 4 24 5 fe 4 3c 5 77 4 54 5 01 4 0c 5 00 4 6c 5 80  # ch 4: wave 0 at the highest step
+11200 w 4 25 5 00 4 3d 5 60 4 55 5 01 4 0d 5 03 4 6d 5 80  # ch 5: the one-shot at 32 samples a step
+13300 w 4 6c 5 00 4 6d 5 00
