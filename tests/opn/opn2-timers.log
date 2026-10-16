@@ -1,0 +1,182 @@
+chip ym2612
+clock 7670453
+samples 30000
+# The timers, status and IRQ line. Timer A counts 0x24 (high 8 bits) and
+# 0x25 (low 2) against 1024, one sample a step; timer B counts 0x26 against
+# 256 in steps of 16. 0x27 loads them (bits 0 and 1), lets them set their
+# status flags (bits 2 and 3) and resets the flags (bits 4 and 5). Status
+# reads at offset 0 land around expiries and straight after a write, which
+# shows the busy bit; offsets 1 to 3 read 0. The prescaler writes 0x2D to
+# 0x2F that the YM2203 and YM2608 take do nothing on the YM2612: its rate
+# stays clock / 144.
+0 w 0 30 1 01 0 40 1 7f 0 50 1 1f 0 60 1 00 0 70 1 00 0 80 1 0f 0 90 1 00 0 38 1 01 0 48 1 7f 0 58 1 1f 0 68 1 00 0 78 1 00 0 88 1 0f 0 98 1 00 0 34 1 01 0 44 1 7f 0 54 1 1f 0 64 1 00 0 74 1 00 0 84 1 0f 0 94 1 00 0 3c 1 01 0 4c 1 08 0 5c 1 1f 0 6c 1 00 0 7c 1 00 0 8c 1 0f 0 9c 1 00 0 b0 1 07 0 b4 1 c0 0 a4 1 22 0 a0 1 69 0 28 1 80
+0 w 0 24 1 fc 0 25 1 02 0 26 1 f0  # timer A: 14 samples, timer B: 256
+0 r 0  # busy
+1 r 0
+1 r 1
+1 r 2
+1 r 3
+10 w 0 27 1 05  # timer A loaded and flagging
+10 r 0
+13 r 0
+16 r 0
+19 r 0
+22 r 0
+25 r 0
+28 r 0
+31 r 0
+34 r 0
+37 r 0
+100 w 0 27 1 15  # reset A's flag
+100 r 0
+102 r 0
+200 w 0 27 1 0a  # timer B only; A stops
+200 r 0
+328 r 0
+456 r 0
+584 r 0
+712 r 0
+840 r 0
+1000 w 0 27 1 3a  # reset both flags; B runs on
+1001 r 0
+1500 w 0 27 1 0f  # both
+1500 r 0
+1537 r 0
+1574 r 0
+1611 r 0
+1648 r 0
+1685 r 0
+1722 r 0
+1759 r 0
+1796 r 0
+1833 r 0
+1870 r 0
+1907 r 0
+1944 r 0
+1981 r 0
+2018 r 0
+2055 r 0
+2092 r 0
+2129 r 0
+2166 r 0
+2203 r 0
+2500 w 0 27 1 33  # both running, flags reset and masked: the IRQ drops
+2700 r 0
+3000 w 0 27 1 3f  # both reset and flagging
+3500 w 0 2d 1 00  # prescaler writes: no effect
+3600 w 0 2e 1 00
+3700 w 0 2f 1 00
+4000 w 0 27 1 30 0 24 1 00 0 25 1 00 0 26 1 00  # stopped; the longest periods
+4001 w 0 27 1 0f  # A: 1024 samples, B: 4096
+5023 r 0
+5025 r 0
+6047 r 0
+6049 r 0
+7071 r 0
+7073 r 0
+8095 r 0
+8097 r 0
+9119 r 0
+9121 r 0
+10143 r 0
+10145 r 0
+11167 r 0
+11169 r 0
+12191 r 0
+12193 r 0
+13215 r 0
+13217 r 0
+14239 r 0
+14241 r 0
+16000 w 0 27 1 30  # stopped and cleared
+16500 w 0 24 1 ff 0 25 1 03 0 27 1 05  # A at its shortest: one sample
+16502 r 0
+17000 w 0 27 1 30 0 26 1 ff  # B at its shortest: 16 samples
+17001 w 0 27 1 0a
+17100 w 0 27 1 2a  # clear B's flag
+17101 r 0
+17150 w 0 27 1 2a
+17151 r 0
+17200 w 0 27 1 2a
+17201 r 0
+17250 w 0 27 1 2a
+17251 r 0
+17300 w 0 27 1 2a
+17301 r 0
+17350 w 0 27 1 2a
+17351 r 0
+17400 w 0 27 1 2a
+17401 r 0
+17450 w 0 27 1 2a
+17451 r 0
+17500 w 0 27 1 2a
+17501 r 0
+17550 w 0 27 1 2a
+17551 r 0
+17600 w 0 27 1 2a
+17601 r 0
+17650 w 0 27 1 2a
+17651 r 0
+17700 w 0 27 1 2a
+17701 r 0
+17750 w 0 27 1 2a
+17751 r 0
+17800 w 0 27 1 2a
+17801 r 0
+17850 w 0 27 1 2a
+17851 r 0
+17900 w 0 27 1 2a
+17901 r 0
+17950 w 0 27 1 2a
+17951 r 0
+18000 w 0 27 1 2a
+18001 r 0
+18050 w 0 27 1 2a
+18051 r 0
+18100 w 0 27 1 2a
+18101 r 0
+18150 w 0 27 1 2a
+18151 r 0
+18200 w 0 27 1 2a
+18201 r 0
+18250 w 0 27 1 2a
+18251 r 0
+18300 w 0 27 1 2a
+18301 r 0
+18350 w 0 27 1 2a
+18351 r 0
+18400 w 0 27 1 2a
+18401 r 0
+18450 w 0 27 1 2a
+18451 r 0
+18500 w 0 27 1 2a
+18501 r 0
+18550 w 0 27 1 2a
+18551 r 0
+18600 w 0 27 1 2a
+18601 r 0
+18650 w 0 27 1 2a
+18651 r 0
+18700 w 0 27 1 2a
+18701 r 0
+18750 w 0 27 1 2a
+18751 r 0
+18800 w 0 27 1 2a
+18801 r 0
+18850 w 0 27 1 2a
+18851 r 0
+18900 w 0 27 1 2a
+18901 r 0
+18950 w 0 27 1 2a
+18951 r 0
+19000 w 0 27 1 2a
+19001 r 0
+19050 w 0 27 1 2a
+19051 r 0
+20000 w 0 27 1 08  # B enabled but not loaded: stops
+20100 r 0
+21000 w 0 27 1 02  # B loaded but not flagging
+21100 r 0
+22000 w 0 27 1 2b  # flagging again, timer running
+27000 w 0 27 1 30  # stopped and cleared
+27001 r 0

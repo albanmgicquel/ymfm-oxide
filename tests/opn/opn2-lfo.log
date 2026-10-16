@@ -1,0 +1,42 @@
+chip ym2612
+clock 7670453
+samples 56000
+# The LFO (0x22: enable bit 3, rate 0-7): a carrier with AM enabled at AMS 3
+# and PMS 7 through every rate; then at rate 5, PMS 0 to 7 and AMS 0 to 3;
+# PM at a high and a low frequency number and at block 0 and 7 on three more
+# channels; the LFO disabled, where the AM offset sits at its maximum, 0x3F
+# (an operator with AM enabled is attenuated); and AM enabled on one
+# operator of a two-carrier connection only. Re-enabling restarts the
+# counter.
+0 w 0 30 1 01 0 40 1 7f 0 50 1 1f 0 60 1 00 0 70 1 00 0 80 1 0f 0 90 1 00 0 38 1 01 0 48 1 7f 0 58 1 1f 0 68 1 00 0 78 1 00 0 88 1 0f 0 98 1 00 0 34 1 01 0 44 1 7f 0 54 1 1f 0 64 1 00 0 74 1 00 0 84 1 0f 0 94 1 00 0 3c 1 01 0 4c 1 00 0 5c 1 1f 0 6c 1 80 0 7c 1 00 0 8c 1 0f 0 9c 1 00 0 b0 1 07 0 b4 1 f7 0 a4 1 22 0 a0 1 69 0 28 1 80
+0 w 0 22 1 08  # LFO rate 0
+2500 w 0 22 1 09  # LFO rate 1
+5000 w 0 22 1 0a  # LFO rate 2
+7500 w 0 22 1 0b  # LFO rate 3
+10000 w 0 22 1 0c  # LFO rate 4
+12500 w 0 22 1 0d  # LFO rate 5
+15000 w 0 22 1 0e  # LFO rate 6
+17500 w 0 22 1 0f  # LFO rate 7
+20000 w 0 22 1 0d
+20000 w 0 b4 1 f0  # PMS 0
+21500 w 0 b4 1 f1  # PMS 1
+23000 w 0 b4 1 f2  # PMS 2
+24500 w 0 b4 1 f3  # PMS 3
+26000 w 0 b4 1 f4  # PMS 4
+27500 w 0 b4 1 f5  # PMS 5
+29000 w 0 b4 1 f6  # PMS 6
+30500 w 0 b4 1 f7  # PMS 7
+32000 w 0 b4 1 c7  # AMS 0
+33500 w 0 b4 1 d7  # AMS 1
+35000 w 0 b4 1 e7  # AMS 2
+36500 w 0 b4 1 f7  # AMS 3
+38000 w 0 31 1 01 0 41 1 7f 0 51 1 1f 0 61 1 00 0 71 1 00 0 81 1 0f 0 91 1 00 0 39 1 01 0 49 1 7f 0 59 1 1f 0 69 1 00 0 79 1 00 0 89 1 0f 0 99 1 00 0 35 1 01 0 45 1 7f 0 55 1 1f 0 65 1 00 0 75 1 00 0 85 1 0f 0 95 1 00 0 3d 1 01 0 4d 1 00 0 5d 1 1f 0 6d 1 00 0 7d 1 00 0 8d 1 0f 0 9d 1 00 0 b1 1 07 0 b5 1 c7 0 a5 1 3f 0 a1 1 ff 0 28 1 81  # PM at the top
+38000 w 2 30 3 01 2 40 3 7f 2 50 3 1f 2 60 3 00 2 70 3 00 2 80 3 0f 2 90 3 00 2 38 3 01 2 48 3 7f 2 58 3 1f 2 68 3 00 2 78 3 00 2 88 3 0f 2 98 3 00 2 34 3 01 2 44 3 7f 2 54 3 1f 2 64 3 00 2 74 3 00 2 84 3 0f 2 94 3 00 2 3c 3 01 2 4c 3 00 2 5c 3 1f 2 6c 3 00 2 7c 3 00 2 8c 3 0f 2 9c 3 00 2 b0 3 07 2 b4 3 c5 2 a4 3 00 2 a0 3 ff 0 28 1 84  # PM at block 0
+38000 w 2 32 3 01 2 42 3 20 2 52 3 1f 2 62 3 80 2 72 3 00 2 82 3 0f 2 92 3 00 2 3a 3 01 2 4a 3 00 2 5a 3 1f 2 6a 3 80 2 7a 3 00 2 8a 3 0f 2 9a 3 00 2 36 3 01 2 46 3 20 2 56 3 1f 2 66 3 00 2 76 3 00 2 86 3 0f 2 96 3 00 2 3e 3 01 2 4e 3 00 2 5e 3 1f 2 6e 3 00 2 7e 3 00 2 8e 3 0f 2 9e 3 00 2 b2 3 14 2 b6 3 e6 2 a6 3 2c 2 a2 3 a0 0 28 1 f6  # AM on one pair
+38000 w 0 22 1 0f  # the fastest rate
+42000 w 0 22 1 00  # LFO disabled: AM held at 0x3f
+44000 w 0 b4 1 d7 2 b6 3 f6  # other AMS while disabled
+46000 w 0 22 1 0b  # enabled again, from the start
+48000 w 0 22 1 03  # disabled, rate bits left
+49000 w 0 22 1 0e
+51000 w 0 a5 1 31 0 a1 1 23 0 a4 1 17 0 a0 1 ff 2 a4 3 38 2 a0 3 01  # new frequencies under PM
