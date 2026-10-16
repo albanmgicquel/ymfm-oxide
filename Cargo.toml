@@ -3,11 +3,13 @@ name = "ymfm-oxide"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.88"
-description = "A pure-Rust, no_std Yamaha OPL2 (YM3812) and OPL3 (YMF262) FM synthesizer, translated from ymfm"
+description = "A pure-Rust, no_std port of ymfm, the emulator of the Yamaha FM sound chips"
 license = "BSD-3-Clause"
 authors = ["Alban Gicquel <6368237+albanmgicquel@users.noreply.github.com>"]
-keywords = ["opl", "opl3", "fm", "synthesizer", "adlib"]
+repository = "https://github.com/albanmgicquel/ymfm-oxide"
+keywords = ["ym2151", "opl3", "fm", "synthesizer", "emulator"]
 categories = ["emulators", "multimedia::audio", "no-std"]
 readme = "README.md"
+exclude = ["/oracle"]
 
 [dependencies]
